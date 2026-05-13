@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
@@ -193,6 +193,7 @@ const clearStoredSubmission = () => {
 
 export default function ApplyPage() {
   const { code } = useParams()
+  const submitRequestedRef = useRef(false)
   const [advisorCode, setAdvisorCode] = useState(String(code || '').toLowerCase())
   const [currentStep, setCurrentStep] = useState(0)
   const [form, setForm] = useState(initialForm)
@@ -360,6 +361,11 @@ export default function ApplyPage() {
 
   const submit = async (event) => {
     event.preventDefault()
+
+    if (!submitRequestedRef.current) {
+      return
+    }
+    submitRequestedRef.current = false
 
     if (!validateBeforeSubmit()) {
       return
@@ -546,6 +552,9 @@ export default function ApplyPage() {
               {isLastStep ? (
                 <button
                   type="submit"
+                  onClick={() => {
+                    submitRequestedRef.current = true
+                  }}
                   disabled={submitting}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70 sm:min-w-56"
                 >
@@ -731,6 +740,7 @@ function SelectField({ label, value, onChange, options }) {
 
 function DocumentUpload({ documentType, files, onFiles, onRemove }) {
   const inputId = `document-${documentType.key}`
+  const inputRef = useRef(null)
 
   return (
     <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
@@ -741,21 +751,25 @@ function DocumentUpload({ documentType, files, onFiles, onRemove }) {
           </label>
           <p className="mt-1 text-xs font-semibold text-slate-500">JPG, PNG, or PDF up to 10MB</p>
         </div>
-        <label
-          htmlFor={inputId}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
           className="inline-flex min-h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-sky-200 bg-white px-3 text-sm font-bold text-sky-700 hover:bg-sky-50"
         >
           <UploadCloud className="h-4 w-4" />
           Upload
-        </label>
+        </button>
       </div>
 
       <input
+        ref={inputRef}
         id={inputId}
         type="file"
         accept={documentType.accept || 'image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf'}
         className="sr-only"
+        onClick={(event) => event.stopPropagation()}
         onChange={(event) => {
+          event.stopPropagation()
           onFiles(event.target.files)
           event.target.value = ''
         }}
