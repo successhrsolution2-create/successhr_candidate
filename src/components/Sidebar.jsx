@@ -1,0 +1,105 @@
+import { useEffect, useMemo, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import {
+  Building2,
+  LayoutDashboard,
+  UserCircle,
+  UserCheck,
+  // X,
+  Wallet
+} from 'lucide-react'
+import { connectSocket, disconnectSocket } from '../socket'
+import BrandLogo from './BrandLogo'
+import Topbar from './Topbar'
+
+// Remove top four options from main links for super admin
+const adminMainLinks = []
+
+const baLinks = [
+  { to: '/ba/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/ba/profile', label: 'My Profile', icon: UserCircle },
+  { to: '/ba/students', label: 'My Candidates', icon: UserCheck },
+  { to: '/ba/companies', label: 'My Companies', icon: Building2 },
+  { to: '/ba/earnings', label: 'My Earnings', icon: Wallet }
+]
+
+export default function Sidebar({ role, children }) {
+  const [open, setOpen] = useState(false)
+  const { token } = useSelector((state) => state.auth)
+  const location = useLocation()
+
+  const isSuperAdmin = role === 'superAdmin'
+  const links = useMemo(() => (isSuperAdmin ? adminMainLinks : baLinks), [isSuperAdmin])
+
+  useEffect(() => {
+    if (!token) return undefined
+    connectSocket(token)
+    return () => disconnectSocket()
+  }, [token])
+
+  return (
+    <div className="flex min-h-screen bg-slate-100">
+      {open && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-800 text-white transition ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        } lg:static lg:translate-x-0`}
+      >
+        <div className="flex items-center justify-between border-b border-slate-700 p-4">
+          <BrandLogo />
+          {/* <button onClick={() => setOpen(false)} className="lg:hidden" aria-label="Close menu">
+            <X />
+          </button> */}
+        </div>
+
+        <nav className="space-y-1 whitespace-nowrap p-3 overflow-x-hidden">
+          {/* Only show main links for non-superAdmin */}
+          {!isSuperAdmin && links.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `flex items-center gap-2 rounded-lg px-3 py-2 whitespace-nowrap ${isActive ? 'bg-indigo-600' : 'hover:bg-slate-700'}`
+              }
+            >
+              <item.icon size={16} />
+              <span className="whitespace-nowrap">{item.label}</span>
+            </NavLink>
+          ))}
+
+          {isSuperAdmin ? (
+            <>
+              <div className="my-3 border-t border-slate-700" />
+              <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-300 whitespace-nowrap">Candidate Management</p>
+              <div className="ml-6 mt-1 space-y-1">
+                <NavLink
+                  to="/admin/cms/candidates"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-indigo-600' : 'hover:bg-slate-700'}`
+                  }
+                >
+                  <UserCheck size={16} /> <span className="whitespace-nowrap">Candidates</span>
+                </NavLink>
+                <NavLink
+                  to="/admin/cms/companies"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-indigo-600' : 'hover:bg-slate-700'}`
+                  }
+                >
+                  <Building2 size={16} /> <span className="whitespace-nowrap">Companies</span>
+                </NavLink>
+              </div>
+            </>
+          ) : null}
+        </nav>
+      </aside>
+
+      <div className="flex flex-1 flex-col">
+        <Topbar onMenuClick={() => setOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
+    </div>
+  )
+}
