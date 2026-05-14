@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
 import api from '../../../api/axios'
+import Skeleton from '../../../components/Skeleton'
 
 const facilities = ['Bus', 'Canteen', 'Room', 'PF', 'ESIC', 'Offer Letter', 'Appointment Letter', 'Experience Letter']
 const weeklyOffs = ['Saturday', 'Sunday']
@@ -180,7 +181,7 @@ export default function CompanyForm() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading company...</p>
+    return <Skeleton rows={5} label="Loading company..." />
   }
 
   return (

@@ -7,19 +7,27 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   FileImage,
   GraduationCap,
   Handshake,
   Loader2,
-  MessageSquare,
   UploadCloud,
   UserRound,
-  UsersRound,
   X
 } from 'lucide-react'
 import api from '../api/axios'
-import { allowedDocumentImageTypes, candidateDocumentTypes, MAX_DOCUMENT_IMAGE_SIZE } from '../constants/candidateDocuments'
+import {
+  allowedDocumentImageTypes,
+  candidateDocumentTypes,
+  computerCourseDocumentTypes,
+  educationCertificateDocumentTypes,
+  educationCertificateLabel,
+  MAX_DOCUMENT_IMAGE_SIZE,
+  standaloneCandidateDocumentTypes
+} from '../constants/candidateDocuments'
+
+const resumeCandidateDocumentType = standaloneCandidateDocumentTypes.find((documentType) => documentType.key === 'updatedResume')
+const otherCandidateDocumentTypes = standaloneCandidateDocumentTypes.filter((documentType) => documentType.key !== 'updatedResume')
 
 const initialForm = {
   candidateName: '',
@@ -31,9 +39,27 @@ const initialForm = {
   marriageStatus: '',
   aadhaarNo: '',
   panNo: '',
+  dateOfBirth: '',
   currentAddress: '',
   permanentAddress: '',
+  educationSector: '',
+  educationSectorOther: '',
+  educationBranch: '',
+  educationBranchOther: '',
+  computerCourse: '',
+  computerCourseOther: '',
+  certificationCourse: '',
+  certificationCourseOther: '',
+  educationSpecialization: '',
+  educationSpecializationOther: '',
   collegeName: '',
+  instituteDesignation: '',
+  college12GraduateName: '',
+  postGraduateCollegeName: '',
+  collegeTeacherName: '',
+  collegeDesignation: '',
+  collegeMobileNumber: '',
+  collegeReference: '',
   education: '',
   yearOfHigherEducation: '',
   computerCourses: '',
@@ -42,22 +68,39 @@ const initialForm = {
   professorContactNumber: '',
   referenceBy: '',
   referenceContactNumber: '',
+  referenceProfile: '',
+  referenceProfileOther: '',
   appliedFor: '',
   interestedDepartment: '',
   lookingForField: '',
   preferredIndustry: '',
+  preferredIndustryOther: '',
+  industrySpecialization: '',
+  industrySpecializationOther: '',
   preferredJobLocation: '',
   currentJobLocation: '',
   availabilityForInterview: '',
   totalExperience: '',
   experienceDepartment: '',
   currentCompany: '',
+  keySkillsKnowledge: '',
+  careerJobResponsibilities: '',
   keyResponsibilities: '',
+  netInHandSalary: '',
+  grossSalaryPerMonth: '',
+  ctcSalaryPerMonth: '',
+  expectedNetInHandSalary: '',
+  expectedGrossSalaryPerMonth: '',
+  expectedCtcSalaryPerMonth: '',
   currentSalary: '',
   expectedSalary: '',
+  jobWorkingStatus: '',
+  experienceType: '',
   noticePeriod: '',
+  noticePeriodOther: '',
   careerSummary: '',
   reasonForJobChange: '',
+  reasonForJobChangeOther: '',
   fatherOrHusbandName: '',
   fatherOccupation: '',
   fatherMobileNumber: '',
@@ -73,11 +116,9 @@ const initialForm = {
 const formSteps = [
   { title: 'Personal Details', icon: UserRound },
   { title: 'Education Details', icon: GraduationCap },
-  { title: 'Placement / Reference Details', icon: Handshake },
-  { title: 'Job Preferences', icon: ClipboardList },
   { title: 'Professional Details', icon: BriefcaseBusiness },
-  { title: 'Family Details', icon: UsersRound },
-  { title: 'Additional Information', icon: MessageSquare }
+  { title: 'Reference Success Details', icon: Handshake },
+  { title: 'Document', icon: FileImage }
 ]
 
 const personalFields = [
@@ -85,48 +126,40 @@ const personalFields = [
   { name: 'mobileNumber', label: 'Mobile Number', required: true, inputMode: 'numeric', maxLength: 10, digitsOnly: true },
   { name: 'whatsappNo', label: 'WhatsApp Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
   { name: 'emailId', label: 'Email ID', required: true, type: 'email' },
-  { name: 'currentAge', label: 'Current Age', type: 'number' },
   { name: 'aadhaarNo', label: 'Aadhar Card Number', inputMode: 'numeric', maxLength: 12, digitsOnly: true },
   { name: 'panNo', label: 'PAN Number', maxLength: 10, uppercase: true },
-  { name: 'currentAddress', label: 'Current Address', kind: 'area' },
-  { name: 'permanentAddress', label: 'Permanent Address', kind: 'area' }
+  { name: 'dateOfBirth', label: 'DOB', type: 'date' },
+  { name: 'currentAge', label: 'Current Age', type: 'number' }
 ]
 
-const educationFields = [
-  { name: 'collegeName', label: 'Institute / College Name' },
-  { name: 'education', label: 'Qualification in Details', kind: 'area' },
-  { name: 'yearOfHigherEducation', label: 'Year of Higher Education' },
-  { name: 'computerCourses', label: 'Computer Courses', kind: 'area' },
-  { name: 'otherAchievements', label: 'Other Achievements', kind: 'area' }
+const instituteReferenceFields = [
+  { name: 'collegeName', label: 'Institute Name' },
+  { name: 'professorName', label: 'Institute Representative Name' },
+  { name: 'instituteDesignation', label: 'Designation' },
+  { name: 'professorContactNumber', label: 'Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true }
 ]
 
-const placementFields = [
-  { name: 'professorName', label: 'Professor / Staff / TPO Name' },
-  { name: 'professorContactNumber', label: 'Professor / Staff / TPO Contact Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
-  { name: 'referenceBy', label: 'Reference By' },
-  { name: 'referenceContactNumber', label: 'Reference Contact Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true }
+const instituteCollegeFields = [
+  { name: 'college12GraduateName', label: '12th / Graduate College Name' },
+  { name: 'postGraduateCollegeName', label: 'Post Graduate College Name' },
+  { name: 'collegeTeacherName', label: 'Teacher' },
+  { name: 'collegeDesignation', label: 'Designation' },
+  { name: 'collegeMobileNumber', label: 'Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
+  { name: 'collegeReference', label: 'Reference' }
 ]
 
-const jobPreferenceFields = [
-  { name: 'appliedFor', label: 'Applied For' },
-  { name: 'interestedDepartment', label: 'Interested Department' },
-  { name: 'lookingForField', label: 'Looking For Jobs In Which Field?' },
-  { name: 'preferredIndustry', label: 'Preferred Industry' },
-  { name: 'preferredJobLocation', label: 'Preferred Job Location' },
+const currentSalaryFields = [
+  { name: 'netInHandSalary', label: 'NET / In-hand Salary', inputMode: 'numeric' },
+  { name: 'grossSalaryPerMonth', label: 'Gross Per Month', inputMode: 'numeric' },
+  { name: 'ctcSalaryPerMonth', label: 'CTC Per Month', inputMode: 'numeric' },
   { name: 'currentJobLocation', label: 'Current Job Location' },
-  { name: 'availabilityForInterview', label: 'Availability For Interview' }
+  { name: 'preferredJobLocation', label: 'Preferred Job Location' }
 ]
 
-const professionalFields = [
-  { name: 'totalExperience', label: 'Total Years of Experience', type: 'number' },
-  { name: 'experienceDepartment', label: 'Current / Last Job Profile / Department' },
-  { name: 'currentCompany', label: 'Current / Last Company Name' },
-  { name: 'keyResponsibilities', label: 'Key Responsibilities In Previous Job', kind: 'area' },
-  { name: 'currentSalary', label: 'Current CTC / Salary' },
-  { name: 'expectedSalary', label: 'Expected Salary' },
-  { name: 'noticePeriod', label: 'Notice Period', type: 'number' },
-  { name: 'careerSummary', label: 'Career Summary', kind: 'area' },
-  { name: 'reasonForJobChange', label: 'Reason For Job Change', kind: 'area' }
+const expectedSalaryFields = [
+  { name: 'expectedNetInHandSalary', label: 'Expected NET / In-hand Salary', inputMode: 'numeric' },
+  { name: 'expectedGrossSalaryPerMonth', label: 'Expected Gross Per Month', inputMode: 'numeric' },
+  { name: 'expectedCtcSalaryPerMonth', label: 'Expected CTC Per Month', inputMode: 'numeric' }
 ]
 
 const familyFields = [
@@ -140,15 +173,150 @@ const familyFields = [
   { name: 'siblingEducationOccupation', label: 'Sibling Education / Occupation', kind: 'area' }
 ]
 
-const additionalFields = [
-  { name: 'feedback', label: 'Feedback', kind: 'area' },
-  { name: 'suggestion', label: 'Any Suggestion', kind: 'area' }
+const addressPartFields = [
+  { name: 'village', label: 'Village' },
+  { name: 'taluka', label: 'Taluka' },
+  { name: 'district', label: 'District' },
+  { name: 'state', label: 'State' }
 ]
+
+const educationSectorOptions = ['', '10th', '12th', 'Graduate', 'PG', 'PHD', 'ITI', 'Diploma', 'Degree', 'Other']
+const higherEducationYearOptions = ['', ...Array.from({ length: 67 }, (_, index) => String(new Date().getFullYear() + 4 - index))]
+const educationBranchOptions = ['', 'Arts', 'Commerce', 'Science', 'Diploma/BE', 'Pharmacy', 'MBA', 'Nursing', 'ITI', 'Computer Application', 'Computer Science', 'Other']
+const computerCourseOptions = ['', 'MS-CIT', 'CCC', 'Advanced Excel', 'PowerPoint', 'Tally', 'AutoCAD', 'Other']
+const certificationCourseOptions = ['', 'Graphic Design', 'C++', 'Java', 'PHP', 'Python', 'Web Development', 'Digital Marketing', 'Data Analytics', 'Other']
+const educationSpecializationOptions = ['', 'Chemistry', 'Microbiology', 'Physics', 'Mathematics', 'Botany', 'Zoology', 'Biotechnology', 'Biochemistry', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Computer Science', 'Information Technology', 'Accounting', 'Finance', 'Marketing', 'HR', 'Pharmacy', 'Nursing', 'Other']
+const preferredDepartmentOptions = ['', 'Accounts', 'Sales', 'Quality', 'HR', 'Admin', 'Production', 'Operations', 'Purchase', 'Store', 'Logistics', 'Dispatch', 'Customer Support', 'Marketing', 'Finance', 'IT', 'Design', 'Maintenance', 'Research & Development', 'Safety', 'Front Office', 'Back Office', 'Warehouse']
+const preferredIndustryOptions = ['', 'Manufacturing', 'Banking', 'Finance', 'Insurance', 'IT', 'Non IT', 'Services', 'Educational', 'Healthcare', 'Pharmaceutical', 'Automobile', 'FMCG', 'Retail', 'Real Estate', 'Construction', 'Logistics', 'Telecom', 'Hospitality', 'Textile', 'Chemical', 'Food Processing', 'E-commerce', 'Consulting', 'Other']
+const industrySpecializationOptions = ['', 'Manufacturing', 'Food', 'Pharma', 'Polymer', 'FMCG', 'Chemical', 'Cosmetics', 'Plastic', 'Engineering', 'Automobile', 'Any Industry', 'Textile', 'Packaging', 'Electrical', 'Electronics', 'Agriculture', 'Healthcare', 'Construction', 'Logistics', 'Other']
+const jobWorkingStatusOptions = ['', 'Working', 'Jobless']
+const experienceTypeOptions = ['', 'Fresher', 'Experience']
+const noticePeriodOptions = ['', 'Immediate Joiner', '15 Days', '30 Days', '45 Days', '60 Days', '90 Days', 'Other']
+const reasonForJobChangeOptions = ['', 'Looking for financial and personal growth', 'Looking for opportunity in native place', 'Facing challenge in current company', 'Any Other']
+const referenceSourceOptions = ['Social Media', 'WhatsApp', 'Facebook', 'Instagram', 'LinkedIn', 'Friend', 'Relatives']
+const referenceProfileOptions = ['', 'Professional', 'Farmer', 'Student', 'Other']
 
 const requiredFields = ['candidateName', 'mobileNumber', 'emailId']
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
-const MAX_TOTAL_DOCUMENT_FILES = 1
+const MAX_DOCUMENT_FILES_PER_TYPE = 10
+
+const createEmptyAddressParts = () => ({
+  village: '',
+  taluka: '',
+  district: '',
+  state: ''
+})
+
+const formatAddressParts = (parts) =>
+  addressPartFields
+    .map((field) => [field.label, String(parts[field.name] || '').trim()])
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${value}`)
+    .join(', ')
+
+const getSelectedOptionValue = (value, otherValue) => {
+  const selected = String(value || '').trim()
+  if (selected !== 'Other') return selected
+  return String(otherValue || '').trim() || selected
+}
+
+const formatEducationDetails = (form) => {
+  const sector = getSelectedOptionValue(form.educationSector, form.educationSectorOther)
+  const yearOfHigherEducation = String(form.yearOfHigherEducation || '').trim()
+  const branch = getSelectedOptionValue(form.educationBranch, form.educationBranchOther)
+  const specialization = getSelectedOptionValue(form.educationSpecialization, form.educationSpecializationOther)
+  const qualificationDetails = String(form.education || '').trim()
+
+  return [
+    sector ? `Highest Education: ${sector}` : '',
+    yearOfHigherEducation ? `Year of Higher Education: ${yearOfHigherEducation}` : '',
+    branch ? `Education Branch: ${branch}` : '',
+    specialization ? `Education Specialization: ${specialization}` : '',
+    qualificationDetails ? `Qualification Details: ${qualificationDetails}` : ''
+  ].filter(Boolean).join('\n')
+}
+
+const formatComputerCourses = (form) => {
+  const computerCourse = getSelectedOptionValue(form.computerCourse, form.computerCourseOther)
+  const certificationCourse = getSelectedOptionValue(form.certificationCourse, form.certificationCourseOther)
+
+  return [
+    computerCourse ? `Computer Course: ${computerCourse}` : '',
+    certificationCourse ? `Other Certification Course: ${certificationCourse}` : ''
+  ].filter(Boolean).join('\n')
+}
+
+const formatInstituteReferenceDetails = (form, instituteAddress) =>
+  [
+    form.collegeName?.trim() ? `Institute Name: ${form.collegeName.trim()}` : '',
+    form.professorName?.trim() ? `Institute Representative Name: ${form.professorName.trim()}` : '',
+    form.instituteDesignation?.trim() ? `Designation: ${form.instituteDesignation.trim()}` : '',
+    form.professorContactNumber?.trim() ? `Institute Mobile Number: ${form.professorContactNumber.trim()}` : '',
+    instituteAddress ? `Institute Address: ${instituteAddress}` : ''
+  ].filter(Boolean).join('\n')
+
+const formatInstituteCollegeDetails = (form, collegeAddress) =>
+  [
+    form.college12GraduateName?.trim() ? `12th / Graduate College Name: ${form.college12GraduateName.trim()}` : '',
+    form.postGraduateCollegeName?.trim() ? `Post Graduate College Name: ${form.postGraduateCollegeName.trim()}` : '',
+    form.collegeTeacherName?.trim() ? `Teacher: ${form.collegeTeacherName.trim()}` : '',
+    form.collegeDesignation?.trim() ? `Designation: ${form.collegeDesignation.trim()}` : '',
+    form.collegeMobileNumber?.trim() ? `College Mobile Number: ${form.collegeMobileNumber.trim()}` : '',
+    form.collegeReference?.trim() ? `Reference: ${form.collegeReference.trim()}` : '',
+    collegeAddress ? `College Address: ${collegeAddress}` : ''
+  ].filter(Boolean).join('\n')
+
+const formatCareerSummary = (form) => {
+  const industrySpecialization = getSelectedOptionValue(form.industrySpecialization, form.industrySpecializationOther)
+  const jobWorkingStatus = String(form.jobWorkingStatus || '').trim()
+  const experienceType = String(form.experienceType || '').trim()
+  const noticePeriod = getSelectedOptionValue(form.noticePeriod, form.noticePeriodOther)
+  const careerSummary = String(form.careerSummary || '').trim()
+
+  return [
+    industrySpecialization ? `Industry Specialization: ${industrySpecialization}` : '',
+    jobWorkingStatus ? `Job Working Status: ${jobWorkingStatus}` : '',
+    experienceType ? `Total Experience Type: ${experienceType}` : '',
+    noticePeriod ? `Notice Period: ${noticePeriod}` : '',
+    careerSummary ? `Career Summary: ${careerSummary}` : ''
+  ].filter(Boolean).join('\n')
+}
+
+const getNoticePeriodDays = (noticePeriod) => {
+  const match = String(noticePeriod || '').match(/^(\d+)/)
+  return match ? match[1] : ''
+}
+
+const formatCurrentSalaryDetails = (form) =>
+  [
+    form.netInHandSalary?.trim() ? `NET / In-hand Salary: ${form.netInHandSalary.trim()}` : '',
+    form.grossSalaryPerMonth?.trim() ? `Gross Per Month: ${form.grossSalaryPerMonth.trim()}` : '',
+    form.ctcSalaryPerMonth?.trim() ? `CTC Per Month: ${form.ctcSalaryPerMonth.trim()}` : ''
+  ].filter(Boolean).join('\n')
+
+const formatExpectedSalaryDetails = (form) =>
+  [
+    form.expectedNetInHandSalary?.trim() ? `Expected NET / In-hand Salary: ${form.expectedNetInHandSalary.trim()}` : '',
+    form.expectedGrossSalaryPerMonth?.trim() ? `Expected Gross Per Month: ${form.expectedGrossSalaryPerMonth.trim()}` : '',
+    form.expectedCtcSalaryPerMonth?.trim() ? `Expected CTC Per Month: ${form.expectedCtcSalaryPerMonth.trim()}` : ''
+  ].filter(Boolean).join('\n')
+
+const formatKeyResponsibilities = (form) =>
+  [
+    form.keySkillsKnowledge?.trim() ? `Key Skills / Knowledge: ${form.keySkillsKnowledge.trim()}` : '',
+    form.careerJobResponsibilities?.trim() ? `Key Job Responsibility: ${form.careerJobResponsibilities.trim()}` : ''
+  ].filter(Boolean).join('\n')
+
+const formatReferenceSuccessDetails = (sources, form) => {
+  const sourceText = sources.length ? sources.join(', ') : ''
+  const profile = getSelectedOptionValue(form.referenceProfile, form.referenceProfileOther)
+
+  return [
+    sourceText ? `Reference Source: ${sourceText}` : '',
+    profile ? `Reference Profile: ${profile}` : ''
+  ].filter(Boolean).join('\n')
+}
 
 const getSubmitErrorMessage = (error) => {
   const serverMessage = error.response?.data?.message
@@ -197,6 +365,12 @@ export default function ApplyPage() {
   const [advisorCode, setAdvisorCode] = useState(String(code || '').toLowerCase())
   const [currentStep, setCurrentStep] = useState(0)
   const [form, setForm] = useState(initialForm)
+  const [currentAddressParts, setCurrentAddressParts] = useState(() => createEmptyAddressParts())
+  const [permanentAddressParts, setPermanentAddressParts] = useState(() => createEmptyAddressParts())
+  const [instituteAddressParts, setInstituteAddressParts] = useState(() => createEmptyAddressParts())
+  const [collegeAddressParts, setCollegeAddressParts] = useState(() => createEmptyAddressParts())
+  const [referenceSuccessSources, setReferenceSuccessSources] = useState([])
+  const [sameAsCurrentAddress, setSameAsCurrentAddress] = useState(false)
   const [documents, setDocuments] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -222,6 +396,35 @@ export default function ApplyPage() {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  const updateCurrentAddressPart = (field, value) => {
+    if (submitError) setSubmitError('')
+    setCurrentAddressParts((current) => ({ ...current, [field]: value }))
+  }
+
+  const updatePermanentAddressPart = (field, value) => {
+    if (submitError) setSubmitError('')
+    setPermanentAddressParts((current) => ({ ...current, [field]: value }))
+  }
+
+  const updateInstituteAddressPart = (field, value) => {
+    if (submitError) setSubmitError('')
+    setInstituteAddressParts((current) => ({ ...current, [field]: value }))
+  }
+
+  const updateCollegeAddressPart = (field, value) => {
+    if (submitError) setSubmitError('')
+    setCollegeAddressParts((current) => ({ ...current, [field]: value }))
+  }
+
+  const toggleReferenceSuccessSource = (source) => {
+    if (submitError) setSubmitError('')
+    setReferenceSuccessSources((current) =>
+      current.includes(source)
+        ? current.filter((item) => item !== source)
+        : [...current, source]
+    )
+  }
+
   const normalizeFieldValue = (field, value) => {
     let next = value
     if (field.digitsOnly) next = next.replace(/\D/g, '')
@@ -231,7 +434,8 @@ export default function ApplyPage() {
   }
 
   const validateDocumentFile = (file, documentType) => {
-    if (!allowedDocumentImageTypes.has(file.type)) {
+    const allowedTypes = new Set(documentType.allowedTypes || Array.from(allowedDocumentImageTypes))
+    if (!allowedTypes.has(file.type)) {
       toast.error(`${file.name} ${documentType.typeMessage || 'must be a JPG, PNG, or PDF file'}`)
       return false
     }
@@ -287,33 +491,32 @@ export default function ApplyPage() {
   }
 
   const validateCurrentStep = () => {
-    if (currentStep === 0) return validatePersonalStep()
-    if (currentStep === 2) {
+    if (currentStep === 0) {
       return (
-        validatePhoneField('professorContactNumber', 'Professor / Staff / TPO contact number') &&
-        validatePhoneField('referenceContactNumber', 'Reference contact number')
-      )
-    }
-    if (currentStep === 5) {
-      return (
+        validatePersonalStep() &&
         validatePhoneField('fatherMobileNumber', 'Father mobile number') &&
         validatePhoneField('motherMobileNumber', 'Mother mobile number')
       )
+    }
+    if (currentStep === 1) {
+      return (
+        validatePhoneField('professorContactNumber', 'Institute mobile number') &&
+        validatePhoneField('collegeMobileNumber', 'College mobile number')
+      )
+    }
+    if (currentStep === 3) {
+      return validatePhoneField('referenceContactNumber', 'Reference mobile number')
     }
     return true
   }
 
   const validateBeforeSubmit = () => {
     if (!validatePersonalStep()) return false
-    if (!validatePhoneField('professorContactNumber', 'Professor / Staff / TPO contact number')) return false
-    if (!validatePhoneField('referenceContactNumber', 'Reference contact number')) return false
+    if (!validatePhoneField('professorContactNumber', 'Institute mobile number')) return false
+    if (!validatePhoneField('collegeMobileNumber', 'College mobile number')) return false
+    if (!validatePhoneField('referenceContactNumber', 'Reference mobile number')) return false
     if (!validatePhoneField('fatherMobileNumber', 'Father mobile number')) return false
     if (!validatePhoneField('motherMobileNumber', 'Mother mobile number')) return false
-
-    if (selectedDocumentCount > MAX_TOTAL_DOCUMENT_FILES) {
-      toast.error('Upload only one resume file')
-      return false
-    }
 
     return true
   }
@@ -336,14 +539,22 @@ export default function ApplyPage() {
     const files = Array.from(fileList || [])
     if (!files.length) return
 
-    const file = files.find((item) => validateDocumentFile(item, documentType))
-    if (!file) return
-
     if (submitError) setSubmitError('')
-    setDocuments((current) => ({
-      ...current,
-      [documentType.key]: [file]
-    }))
+    setDocuments((current) => {
+      const currentFiles = current[documentType.key] || []
+      const validFiles = files.filter((item) => validateDocumentFile(item, documentType))
+      if (!validFiles.length) return current
+
+      if (currentFiles.length + validFiles.length > MAX_DOCUMENT_FILES_PER_TYPE) {
+        toast.error(`Upload up to ${MAX_DOCUMENT_FILES_PER_TYPE} files for ${documentType.label}`)
+        return current
+      }
+
+      return {
+        ...current,
+        [documentType.key]: [...currentFiles, ...validFiles]
+      }
+    })
   }
 
   const removeDocumentFile = (documentKey, index) => {
@@ -375,9 +586,136 @@ export default function ApplyPage() {
     setSubmitError('')
     try {
       const payload = new FormData()
-      Object.entries(form).forEach(([key, value]) => {
+      const currentAddress = formatAddressParts(currentAddressParts)
+      const instituteAddress = formatAddressParts(instituteAddressParts)
+      const collegeAddress = formatAddressParts(collegeAddressParts)
+      const instituteReferenceDetails = formatInstituteReferenceDetails(form, instituteAddress)
+      const instituteCollegeDetails = formatInstituteCollegeDetails(form, collegeAddress)
+      const referenceSuccessDetails = formatReferenceSuccessDetails(referenceSuccessSources, form)
+      const applicationDetails = {
+        personal: {
+          candidateName: form.candidateName,
+          mobileNumber: form.mobileNumber,
+          whatsappNo: form.whatsappNo,
+          emailId: form.emailId,
+          gender: form.gender,
+          currentAge: form.currentAge,
+          marriageStatus: form.marriageStatus,
+          aadhaarNo: form.aadhaarNo,
+          panNo: form.panNo,
+          dateOfBirth: form.dateOfBirth,
+          currentAddress: currentAddressParts,
+          permanentAddress: sameAsCurrentAddress ? currentAddressParts : permanentAddressParts,
+          sameAsCurrentAddress,
+          familyDetails: {
+            fatherOrHusbandName: form.fatherOrHusbandName,
+            fatherOccupation: form.fatherOccupation,
+            fatherMobileNumber: form.fatherMobileNumber,
+            motherOrWifeName: form.motherOrWifeName,
+            motherOccupation: form.motherOccupation,
+            motherMobileNumber: form.motherMobileNumber,
+            siblingName: form.siblingName,
+            siblingEducationOccupation: form.siblingEducationOccupation
+          }
+        },
+        education: {
+          educationSector: form.educationSector,
+          educationSectorOther: form.educationSectorOther,
+          highestEducation: getSelectedOptionValue(form.educationSector, form.educationSectorOther),
+          yearOfHigherEducation: form.yearOfHigherEducation,
+          educationBranch: form.educationBranch,
+          educationBranchOther: form.educationBranchOther,
+          branch: getSelectedOptionValue(form.educationBranch, form.educationBranchOther),
+          educationSpecialization: form.educationSpecialization,
+          educationSpecializationOther: form.educationSpecializationOther,
+          specialization: getSelectedOptionValue(form.educationSpecialization, form.educationSpecializationOther),
+          computerCourse: form.computerCourse,
+          computerCourseOther: form.computerCourseOther,
+          certificationCourse: form.certificationCourse,
+          certificationCourseOther: form.certificationCourseOther,
+          instituteReference: {
+            instituteName: form.collegeName,
+            representativeName: form.professorName,
+            designation: form.instituteDesignation,
+            mobileNumber: form.professorContactNumber,
+            address: instituteAddressParts
+          },
+          instituteCollege: {
+            college12GraduateName: form.college12GraduateName,
+            postGraduateCollegeName: form.postGraduateCollegeName,
+            teacherName: form.collegeTeacherName,
+            designation: form.collegeDesignation,
+            mobileNumber: form.collegeMobileNumber,
+            reference: form.collegeReference,
+            address: collegeAddressParts
+          }
+        },
+        professional: {
+          preferredDepartment: form.interestedDepartment,
+          preferredIndustry: getSelectedOptionValue(form.preferredIndustry, form.preferredIndustryOther),
+          preferredIndustryRaw: form.preferredIndustry,
+          preferredIndustryOther: form.preferredIndustryOther,
+          industrySpecialization: getSelectedOptionValue(form.industrySpecialization, form.industrySpecializationOther),
+          industrySpecializationRaw: form.industrySpecialization,
+          industrySpecializationOther: form.industrySpecializationOther,
+          currentSalary: {
+            netInHand: form.netInHandSalary,
+            grossPerMonth: form.grossSalaryPerMonth,
+            ctcPerMonth: form.ctcSalaryPerMonth
+          },
+          expectedSalary: {
+            netInHand: form.expectedNetInHandSalary,
+            grossPerMonth: form.expectedGrossSalaryPerMonth,
+            ctcPerMonth: form.expectedCtcSalaryPerMonth
+          },
+          currentJobLocation: form.currentJobLocation,
+          preferredJobLocation: form.preferredJobLocation,
+          jobWorkingStatus: form.jobWorkingStatus,
+          experienceType: form.experienceType,
+          totalExperience: form.experienceType === 'Fresher' ? '0' : form.totalExperience,
+          noticePeriod: getSelectedOptionValue(form.noticePeriod, form.noticePeriodOther),
+          noticePeriodRaw: form.noticePeriod,
+          noticePeriodOther: form.noticePeriodOther,
+          reasonForJobChange: getSelectedOptionValue(form.reasonForJobChange, form.reasonForJobChangeOther),
+          reasonForJobChangeRaw: form.reasonForJobChange,
+          reasonForJobChangeOther: form.reasonForJobChangeOther,
+          keySkillsKnowledge: form.keySkillsKnowledge,
+          careerJobResponsibilities: form.careerJobResponsibilities
+        },
+        referenceSuccess: {
+          advisorCode: advisorCode.trim().toLowerCase(),
+          referenceName: form.referenceBy,
+          referenceMobileNumber: form.referenceContactNumber,
+          referenceProfile: getSelectedOptionValue(form.referenceProfile, form.referenceProfileOther),
+          referenceProfileRaw: form.referenceProfile,
+          referenceProfileOther: form.referenceProfileOther,
+          referenceSources: referenceSuccessSources
+        }
+      }
+      const preparedForm = {
+        ...form,
+        professorName: referenceSuccessDetails,
+        professorContactNumber: '',
+        currentAddress,
+        permanentAddress: sameAsCurrentAddress ? currentAddress : formatAddressParts(permanentAddressParts),
+        education: formatEducationDetails(form),
+        computerCourses: formatComputerCourses(form),
+        interestedDepartment: form.interestedDepartment,
+        preferredIndustry: getSelectedOptionValue(form.preferredIndustry, form.preferredIndustryOther),
+        careerSummary: formatCareerSummary(form),
+        totalExperience: form.experienceType === 'Fresher' ? '0' : form.totalExperience,
+        noticePeriod: getNoticePeriodDays(form.noticePeriod),
+        currentSalary: formatCurrentSalaryDetails(form),
+        expectedSalary: formatExpectedSalaryDetails(form),
+        keyResponsibilities: formatKeyResponsibilities(form),
+        reasonForJobChange: getSelectedOptionValue(form.reasonForJobChange, form.reasonForJobChangeOther),
+        otherAchievements: [instituteReferenceDetails, instituteCollegeDetails].filter(Boolean).join('\n\n')
+      }
+
+      Object.entries(preparedForm).forEach(([key, value]) => {
         payload.append(key, value ?? '')
       })
+      payload.append('applicationDetails', JSON.stringify(applicationDetails))
 
       if (advisorCode.trim()) {
         payload.append('advisorCode', advisorCode.trim().toLowerCase())
@@ -426,6 +764,12 @@ export default function ApplyPage() {
               setDone(null)
               setCurrentStep(0)
               setForm(initialForm)
+              setCurrentAddressParts(createEmptyAddressParts())
+              setPermanentAddressParts(createEmptyAddressParts())
+              setInstituteAddressParts(createEmptyAddressParts())
+              setCollegeAddressParts(createEmptyAddressParts())
+              setReferenceSuccessSources([])
+              setSameAsCurrentAddress(false)
               setDocuments({})
               setSubmitError('')
             }}
@@ -475,53 +819,106 @@ export default function ApplyPage() {
 
             <div className="px-4 py-5 sm:px-6">
               {currentStep === 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {personalFields.slice(0, 4).map((field) => (
-                    <Field key={field.name} field={field} value={form[field.name]} onChange={(value) => update(field.name, normalizeFieldValue(field, value))} />
-                  ))}
-                  <SelectField label="Gender" value={form.gender} onChange={(value) => update('gender', value)} options={['', 'Male', 'Female', 'Other']} />
-                  {personalFields.slice(4, 7).map((field) => (
-                    <Field key={field.name} field={field} value={form[field.name]} onChange={(value) => update(field.name, normalizeFieldValue(field, value))} />
-                  ))}
-                  <SelectField label="Marital Status" value={form.marriageStatus} onChange={(value) => update('marriageStatus', value)} options={['', 'Married', 'Unmarried', 'Single']} />
-                  {personalFields.slice(7).map((field) => (
-                    <Field key={field.name} field={field} value={form[field.name]} onChange={(value) => update(field.name, normalizeFieldValue(field, value))} />
-                  ))}
-                </div>
-              ) : null}
-
-              {currentStep === 1 ? <FieldGrid fields={educationFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} /> : null}
-
-              {currentStep === 2 ? (
-                <div className="space-y-5">
-                  <label className="block text-sm font-semibold leading-5 text-slate-700">
-                    Business Advisor Code
-                    <input
-                      value={advisorCode}
-                      onChange={(event) => setAdvisorCode(String(event.target.value || '').trim().toLowerCase())}
-                      className={inputClassName}
-                    />
-                  </label>
-                  <FieldGrid fields={placementFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} />
-                </div>
-              ) : null}
-
-              {currentStep === 3 ? <FieldGrid fields={jobPreferenceFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} /> : null}
-
-              {currentStep === 4 ? <FieldGrid fields={professionalFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} /> : null}
-
-              {currentStep === 5 ? <FieldGrid fields={familyFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} /> : null}
-
-              {currentStep === 6 ? (
                 <div className="space-y-6">
-                  <FieldGrid fields={additionalFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {personalFields.slice(0, 4).map((field) => (
+                      <Field key={field.name} field={field} value={form[field.name]} onChange={(value) => update(field.name, normalizeFieldValue(field, value))} />
+                    ))}
+                    <SelectField label="Gender" value={form.gender} onChange={(value) => update('gender', value)} options={['', 'Male', 'Female', 'Other']} />
+                    {personalFields.slice(4, 8).map((field) => (
+                      <Field key={field.name} field={field} value={form[field.name]} onChange={(value) => update(field.name, normalizeFieldValue(field, value))} />
+                    ))}
+                    <SelectField label="Marital Status" value={form.marriageStatus} onChange={(value) => update('marriageStatus', value)} options={['', 'Married', 'Unmarried', 'Single', 'Widow']} />
+                  </div>
+
+                  <AddressSection
+                    title="Current Address"
+                    values={currentAddressParts}
+                    onChange={updateCurrentAddressPart}
+                  />
+
+                  <AddressSection
+                    title="Permanent Address"
+                    values={sameAsCurrentAddress ? currentAddressParts : permanentAddressParts}
+                    onChange={updatePermanentAddressPart}
+                    disabled={sameAsCurrentAddress}
+                    action={(
+                      <label className="inline-flex min-h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={sameAsCurrentAddress}
+                          onChange={(event) => {
+                            if (submitError) setSubmitError('')
+                            setSameAsCurrentAddress(event.target.checked)
+                          }}
+                          className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        />
+                        Same as current address
+                      </label>
+                    )}
+                  />
+
                   <div className="border-t border-slate-200 pt-5">
+                    <h3 className="mb-4 text-sm font-bold text-slate-800">Family Details</h3>
+                    <FieldGrid fields={familyFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} />
+                  </div>
+                </div>
+              ) : null}
+
+              {currentStep === 1 ? (
+                <EducationDetails
+                  form={form}
+                  update={update}
+                  normalizeFieldValue={normalizeFieldValue}
+                  instituteAddressParts={instituteAddressParts}
+                  updateInstituteAddressPart={updateInstituteAddressPart}
+                  collegeAddressParts={collegeAddressParts}
+                  updateCollegeAddressPart={updateCollegeAddressPart}
+                />
+              ) : null}
+
+              {currentStep === 2 ? <ProfessionalDetails form={form} update={update} normalizeFieldValue={normalizeFieldValue} /> : null}
+
+              {currentStep === 3 ? (
+                <ReferenceSuccessDetails
+                  form={form}
+                  update={update}
+                  normalizeFieldValue={normalizeFieldValue}
+                  selectedSources={referenceSuccessSources}
+                  onToggleSource={toggleReferenceSuccessSource}
+                  advisorCode={advisorCode}
+                  setAdvisorCode={setAdvisorCode}
+                />
+              ) : null}
+
+              {currentStep === 4 ? (
+                <div className="space-y-6">
+                  <div>
                     <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
                       <FileImage className="h-4 w-4 text-sky-700" />
-                      Resume Upload
+                      Upload Document
                     </div>
-                    <div className="grid gap-3">
-                      {candidateDocumentTypes.map((documentType) => (
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {resumeCandidateDocumentType ? (
+                        <DocumentUpload
+                          key={resumeCandidateDocumentType.key}
+                          documentType={resumeCandidateDocumentType}
+                          files={documents[resumeCandidateDocumentType.key] || []}
+                          onFiles={(files) => addDocumentFiles(resumeCandidateDocumentType, files)}
+                          onRemove={(index) => removeDocumentFile(resumeCandidateDocumentType.key, index)}
+                        />
+                      ) : null}
+                      <EducationCertificateUploadGroup
+                        documents={documents}
+                        addDocumentFiles={addDocumentFiles}
+                        removeDocumentFile={removeDocumentFile}
+                      />
+                      <ComputerCourseUploadGroup
+                        documents={documents}
+                        addDocumentFiles={addDocumentFiles}
+                        removeDocumentFile={removeDocumentFile}
+                      />
+                      {otherCandidateDocumentTypes.map((documentType) => (
                         <DocumentUpload
                           key={documentType.key}
                           documentType={documentType}
@@ -588,11 +985,10 @@ function PublicShell({ children }) {
       <div className="mx-auto max-w-6xl">
         <header className="mb-4 rounded-lg bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200 sm:mb-5 sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <img src="/success-mark.svg" alt="SUCCESS HR Solution" className="h-10 w-10 shrink-0 rounded-lg object-contain ring-1 ring-slate-200" />
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <img src="/success-logo.svg" alt="SUCCESS HR Solution" className="h-12 w-36 shrink-0 object-contain sm:h-14 sm:w-48" />
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase text-sky-700">SUCCESS HR Solution</p>
-                <h1 className="truncate text-lg font-bold text-slate-950 sm:text-2xl">Candidate Application</h1>
+                <h1 className="truncate text-base font-bold text-slate-950 sm:text-2xl">Candidate Job Application Form</h1>
               </div>
             </div>
             <span className="hidden shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 sm:inline-flex">Secure form</span>
@@ -681,9 +1077,440 @@ function MobileProgress({ currentStep, progress }) {
   )
 }
 
-function FieldGrid({ fields, form, update, normalizeFieldValue }) {
+function ProfessionalDetails({ form, update, normalizeFieldValue }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="space-y-5">
+      <div>
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Preferred Department</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Preferred Department"
+            value={form.interestedDepartment}
+            onChange={(value) => update('interestedDepartment', value)}
+            options={preferredDepartmentOptions}
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Preferred Industry</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Preferred Industry"
+            value={form.preferredIndustry}
+            onChange={(value) => update('preferredIndustry', value)}
+            options={preferredIndustryOptions}
+          />
+          {form.preferredIndustry === 'Other' ? (
+            <Field
+              field={{ name: 'preferredIndustryOther', label: 'Other Preferred Industry' }}
+              value={form.preferredIndustryOther}
+              onChange={(value) => update('preferredIndustryOther', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Industry Specialization</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Industry Specialization"
+            value={form.industrySpecialization}
+            onChange={(value) => update('industrySpecialization', value)}
+            options={industrySpecializationOptions}
+          />
+          {form.industrySpecialization === 'Other' ? (
+            <Field
+              field={{ name: 'industrySpecializationOther', label: 'Other Industry Specialization' }}
+              value={form.industrySpecializationOther}
+              onChange={(value) => update('industrySpecializationOther', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Current Salary Per Month</h3>
+        <FieldGrid fields={currentSalaryFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} singleColumn />
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Expected Salary Per Month</h3>
+        <FieldGrid fields={expectedSalaryFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} singleColumn />
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Job Working Status</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Job Working Status"
+            value={form.jobWorkingStatus}
+            onChange={(value) => update('jobWorkingStatus', value)}
+            options={jobWorkingStatusOptions}
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Total Years of Experience</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Experience Type"
+            value={form.experienceType}
+            onChange={(value) => {
+              update('experienceType', value)
+              if (value === 'Fresher') update('totalExperience', '')
+            }}
+            options={experienceTypeOptions}
+          />
+          {form.experienceType === 'Experience' ? (
+            <Field
+              field={{ name: 'totalExperience', label: 'Total Years of Experience', type: 'number' }}
+              value={form.totalExperience}
+              onChange={(value) => update('totalExperience', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Notice Period</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Notice Period"
+            value={form.noticePeriod}
+            onChange={(value) => update('noticePeriod', value)}
+            options={noticePeriodOptions}
+          />
+          {form.noticePeriod === 'Other' ? (
+            <Field
+              field={{ name: 'noticePeriodOther', label: 'Other Notice Period' }}
+              value={form.noticePeriodOther}
+              onChange={(value) => update('noticePeriodOther', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Reason for Job Change</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Reason for Job Change"
+            value={form.reasonForJobChange}
+            onChange={(value) => update('reasonForJobChange', value)}
+            options={reasonForJobChangeOptions}
+          />
+          {form.reasonForJobChange === 'Any Other' ? (
+            <Field
+              field={{ name: 'reasonForJobChangeOther', label: 'Other Reason' }}
+              value={form.reasonForJobChangeOther}
+              onChange={(value) => update('reasonForJobChangeOther', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Key Skills / Knowledge</h3>
+        <Field
+          field={{ name: 'keySkillsKnowledge', label: 'Key skills / knowledge you have, especially for fresher' }}
+          value={form.keySkillsKnowledge}
+          onChange={(value) => update('keySkillsKnowledge', value)}
+        />
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Key Job Responsibility</h3>
+        <Field
+          field={{ name: 'careerJobResponsibilities', label: 'Key job responsibility you handled in your career experience' }}
+          value={form.careerJobResponsibilities}
+          onChange={(value) => update('careerJobResponsibilities', value)}
+        />
+      </div>
+
+    </div>
+  )
+}
+
+function ReferenceSuccessDetails({ form, update, normalizeFieldValue, selectedSources, onToggleSource, advisorCode, setAdvisorCode }) {
+  const referenceMobileField = {
+    name: 'referenceContactNumber',
+    label: 'Reference Mobile Number',
+    inputMode: 'numeric',
+    maxLength: 10,
+    digitsOnly: true
+  }
+
+  return (
+    <div className="space-y-6">
+      <label className="block text-sm font-semibold leading-5 text-slate-700">
+        Business Advisor Code
+        <input
+          value={advisorCode}
+          onChange={(event) => setAdvisorCode(String(event.target.value || '').trim().toLowerCase())}
+          className={inputClassName}
+        />
+      </label>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Reference Details</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field
+            field={{ name: 'referenceBy', label: 'Reference Name' }}
+            value={form.referenceBy}
+            onChange={(value) => update('referenceBy', value)}
+          />
+          <Field
+            field={referenceMobileField}
+            value={form.referenceContactNumber}
+            onChange={(value) => update('referenceContactNumber', normalizeFieldValue(referenceMobileField, value))}
+          />
+          <SelectField
+            label="Reference Profile"
+            value={form.referenceProfile}
+            onChange={(value) => update('referenceProfile', value)}
+            options={referenceProfileOptions}
+          />
+          {form.referenceProfile === 'Other' ? (
+            <Field
+              field={{ name: 'referenceProfileOther', label: 'Other Reference Profile' }}
+              value={form.referenceProfileOther}
+              onChange={(value) => update('referenceProfileOther', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Reference Source</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {referenceSourceOptions.map((source) => (
+            <label
+              key={source}
+              className="flex min-h-11 items-center gap-3 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <input
+                type="checkbox"
+                checked={selectedSources.includes(source)}
+                onChange={() => onToggleSource(source)}
+                className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              {source}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddressSection({ title, values, onChange, disabled = false, action = null }) {
+  return (
+    <div className="border-t border-slate-200 pt-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-sm font-bold text-slate-800">{title}</h3>
+        {action}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {addressPartFields.map((field) => (
+          <label key={field.name} className="block min-w-0 text-sm font-semibold leading-5 text-slate-700">
+            <span className="break-words">{field.label}</span>
+            <input
+              type="text"
+              value={values[field.name] || ''}
+              disabled={disabled}
+              onChange={(event) => onChange(field.name, event.target.value)}
+              className={`${inputClassName} disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500`}
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function EducationDetails({
+  form,
+  update,
+  normalizeFieldValue,
+  instituteAddressParts,
+  updateInstituteAddressPart,
+  collegeAddressParts,
+  updateCollegeAddressPart
+}) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Highest Education</h3>
+        <div className="grid gap-4">
+            <SelectField
+              label="Highest Education"
+              value={form.educationSector}
+              onChange={(value) => update('educationSector', value)}
+              options={educationSectorOptions}
+            />
+            <SelectField
+              label="Year of Higher Education"
+              value={form.yearOfHigherEducation}
+              onChange={(value) => update('yearOfHigherEducation', value)}
+              options={higherEducationYearOptions}
+            />
+            {form.educationSector === 'Other' ? (
+              <Field
+                field={{ name: 'educationSectorOther', label: 'Other Education Sector' }}
+                value={form.educationSectorOther}
+                onChange={(value) => update('educationSectorOther', value)}
+              />
+            ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Education Branch</h3>
+        <div className="space-y-4">
+            <SelectField
+              label="Branch"
+              value={form.educationBranch}
+              onChange={(value) => update('educationBranch', value)}
+              options={educationBranchOptions}
+            />
+            {form.educationBranch === 'Other' ? (
+              <Field
+                field={{ name: 'educationBranchOther', label: 'Other Education Branch' }}
+                value={form.educationBranchOther}
+                onChange={(value) => update('educationBranchOther', value)}
+              />
+            ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Education Specialization</h3>
+        <div className="space-y-4">
+            <SelectField
+              label="Special Subject / Remark"
+              value={form.educationSpecialization}
+              onChange={(value) => update('educationSpecialization', value)}
+              options={educationSpecializationOptions}
+            />
+            {form.educationSpecialization === 'Other' ? (
+              <Field
+                field={{ name: 'educationSpecializationOther', label: 'Other Special Subject' }}
+                value={form.educationSpecializationOther}
+                onChange={(value) => update('educationSpecializationOther', value)}
+              />
+            ) : null}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-5">
+        <h3 className="mb-4 text-sm font-bold text-slate-800">Courses & Certifications</h3>
+        <div className="grid gap-4">
+          <SelectField
+            label="Computer Courses"
+            value={form.computerCourse}
+            onChange={(value) => update('computerCourse', value)}
+            options={computerCourseOptions}
+          />
+          <SelectField
+            label="Other Certification Courses"
+            value={form.certificationCourse}
+            onChange={(value) => update('certificationCourse', value)}
+            options={certificationCourseOptions}
+          />
+          {form.computerCourse === 'Other' ? (
+            <Field
+              field={{ name: 'computerCourseOther', label: 'Other Computer Course' }}
+              value={form.computerCourseOther}
+              onChange={(value) => update('computerCourseOther', value)}
+            />
+          ) : null}
+          {form.certificationCourse === 'Other' ? (
+            <Field
+              field={{ name: 'certificationCourseOther', label: 'Other Certification Course' }}
+              value={form.certificationCourseOther}
+              onChange={(value) => update('certificationCourseOther', value)}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <InstituteReferenceDetails
+        form={form}
+        update={update}
+        normalizeFieldValue={normalizeFieldValue}
+        addressParts={instituteAddressParts}
+        onAddressChange={updateInstituteAddressPart}
+      />
+
+      <InstituteCollegeDetails
+        form={form}
+        update={update}
+        normalizeFieldValue={normalizeFieldValue}
+        addressParts={collegeAddressParts}
+        onAddressChange={updateCollegeAddressPart}
+      />
+    </div>
+  )
+}
+
+function InstituteReferenceDetails({ form, update, normalizeFieldValue, addressParts, onAddressChange }) {
+  return (
+    <div className="border-t border-slate-200 pt-5">
+      <h3 className="mb-4 text-sm font-bold text-slate-800">Institute Reference Details</h3>
+      <FieldGrid fields={instituteReferenceFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} singleColumn />
+
+      <div className="mt-5">
+        <h4 className="mb-4 text-sm font-bold text-slate-800">Institute Address</h4>
+        <div className="grid gap-4">
+          {addressPartFields.map((field) => (
+            <label key={field.name} className="block min-w-0 text-sm font-semibold leading-5 text-slate-700">
+              <span className="break-words">{field.label}</span>
+              <input
+                type="text"
+                value={addressParts[field.name] || ''}
+                onChange={(event) => onAddressChange(field.name, event.target.value)}
+                className={inputClassName}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InstituteCollegeDetails({ form, update, normalizeFieldValue, addressParts, onAddressChange }) {
+  return (
+    <div className="border-t border-slate-200 pt-5">
+      <h3 className="mb-4 text-sm font-bold text-slate-800">Institute / College Details</h3>
+      <FieldGrid fields={instituteCollegeFields} form={form} update={update} normalizeFieldValue={normalizeFieldValue} singleColumn />
+
+      <div className="mt-5">
+        <h4 className="mb-4 text-sm font-bold text-slate-800">College Address</h4>
+        <div className="grid gap-4">
+          {addressPartFields.map((field) => (
+            <label key={field.name} className="block min-w-0 text-sm font-semibold leading-5 text-slate-700">
+              <span className="break-words">{field.label}</span>
+              <input
+                type="text"
+                value={addressParts[field.name] || ''}
+                onChange={(event) => onAddressChange(field.name, event.target.value)}
+                className={inputClassName}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FieldGrid({ fields, form, update, normalizeFieldValue, singleColumn = false }) {
+  return (
+    <div className={`grid gap-4 ${singleColumn ? '' : 'md:grid-cols-2'}`}>
       {fields.map((field) => (
         <Field
           key={field.name}
@@ -738,7 +1565,52 @@ function SelectField({ label, value, onChange, options }) {
   )
 }
 
-function DocumentUpload({ documentType, files, onFiles, onRemove }) {
+function EducationCertificateUploadGroup({ documents, addDocumentFiles, removeDocumentFile }) {
+  return (
+    <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-4 md:col-span-2 xl:col-span-3">
+      <div className="mb-3">
+        <p className="text-sm font-bold text-slate-900">Education Certificates</p>
+        <p className="mt-1 text-xs font-semibold text-slate-500">Upload level-wise certificates like 10th, 12th, Graduate, and Post Graduate.</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {educationCertificateDocumentTypes.map((documentType) => (
+          <DocumentUpload
+            key={documentType.key}
+            documentType={documentType}
+            label={educationCertificateLabel(documentType)}
+            files={documents[documentType.key] || []}
+            onFiles={(files) => addDocumentFiles(documentType, files)}
+            onRemove={(index) => removeDocumentFile(documentType.key, index)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ComputerCourseUploadGroup({ documents, addDocumentFiles, removeDocumentFile }) {
+  return (
+    <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-4 md:col-span-2 xl:col-span-3">
+      <div className="mb-3">
+        <p className="text-sm font-bold text-slate-900">Computer Courses Certificates</p>
+        <p className="mt-1 text-xs font-semibold text-slate-500">Upload course-wise certificates like MS-CIT, CCC, Advanced Excel, Tally, AutoCAD, Typing, and CATIA.</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {computerCourseDocumentTypes.map((documentType) => (
+          <DocumentUpload
+            key={documentType.key}
+            documentType={documentType}
+            files={documents[documentType.key] || []}
+            onFiles={(files) => addDocumentFiles(documentType, files)}
+            onRemove={(index) => removeDocumentFile(documentType.key, index)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DocumentUpload({ documentType, label, files, onFiles, onRemove }) {
   const inputId = `document-${documentType.key}`
   const inputRef = useRef(null)
 
@@ -747,7 +1619,7 @@ function DocumentUpload({ documentType, files, onFiles, onRemove }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <label htmlFor={inputId} className="block text-sm font-bold text-slate-900">
-            {documentType.label}
+            {label || documentType.label}
           </label>
           <p className="mt-1 text-xs font-semibold text-slate-500">JPG, PNG, or PDF up to 10MB</p>
         </div>
@@ -765,6 +1637,7 @@ function DocumentUpload({ documentType, files, onFiles, onRemove }) {
         ref={inputRef}
         id={inputId}
         type="file"
+        multiple
         accept={documentType.accept || 'image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf'}
         className="sr-only"
         onClick={(event) => event.stopPropagation()}

@@ -4,7 +4,14 @@ import toast from 'react-hot-toast'
 import { ExternalLink, FileImage, Pencil, Trash2, X } from 'lucide-react'
 import api, { assetUrl } from '../../../api/axios'
 import { ConfirmDialog } from '../../../components/ActionDialogs'
-import { allowedDocumentImageTypes, candidateDocumentTypes, MAX_DOCUMENT_IMAGE_SIZE } from '../../../constants/candidateDocuments'
+import Skeleton from '../../../components/Skeleton'
+import {
+  computerCourseDocumentTypes,
+  educationCertificateDocumentTypes,
+  educationCertificateLabel,
+  MAX_DOCUMENT_IMAGE_SIZE,
+  standaloneCandidateDocumentTypes
+} from '../../../constants/candidateDocuments'
 
 const successRemarkKeys = [
   ['resumeReady', 'Resume Ready'],
@@ -74,6 +81,9 @@ const formatUpdatedAt = (value) => {
 }
 
 const isImageDocument = (doc) => String(doc?.mimeType || '').startsWith('image/') || /\.(jpe?g|png)$/i.test(String(doc?.fileName || doc?.fileUrl || ''))
+
+const resumeCandidateDocumentType = standaloneCandidateDocumentTypes.find((documentType) => documentType.key === 'updatedResume')
+const otherCandidateDocumentTypes = standaloneCandidateDocumentTypes.filter((documentType) => documentType.key !== 'updatedResume')
 
 export default function CandidateDetails() {
   const navigate = useNavigate()
@@ -200,8 +210,9 @@ export default function CandidateDetails() {
   const uploadDocument = async (documentType, file) => {
     if (!file) return
 
-    if (!allowedDocumentImageTypes.has(file.type)) {
-      toast.error('Only JPG/PNG images are allowed')
+    const allowedTypes = new Set(documentType.allowedTypes || [])
+    if (allowedTypes.size && !allowedTypes.has(file.type)) {
+      toast.error(`${file.name} ${documentType.typeMessage || 'has an unsupported file type'}`)
       return
     }
 
@@ -210,10 +221,10 @@ export default function CandidateDetails() {
       return
     }
 
-    setUploadingByType((current) => ({ ...current, [documentType]: true }))
+    setUploadingByType((current) => ({ ...current, [documentType.key]: true }))
     try {
       const payload = new FormData()
-      payload.append('documentType', documentType)
+      payload.append('documentType', documentType.key)
       payload.append('document', file)
 
       const { data } = await api.post(`/cms/candidates/${id}/documents`, payload)
@@ -222,11 +233,11 @@ export default function CandidateDetails() {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Could not upload document')
     } finally {
-      setUploadingByType((current) => ({ ...current, [documentType]: false }))
+      setUploadingByType((current) => ({ ...current, [documentType.key]: false }))
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-500">Loading candidate details...</p>
+  if (loading) return <Skeleton rows={6} label="Loading candidate details..." />
   if (!candidate) return <p className="text-sm text-rose-600">Candidate not found.</p>
 
   return (
@@ -267,28 +278,7 @@ export default function CandidateDetails() {
 
       {tab === 'info' ? (
         <section className="space-y-5 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Info label="Full Name" value={candidate.fullName} />
-            <Info label="Mobile Number" value={candidate.mobileNumber} />
-            <Info label="WhatsApp" value={candidate.whatsappNo} />
-            <Info label="Email" value={candidate.emailId} />
-            <Info label="Date Of Birth" value={dateValue(candidate.dateOfBirth)} />
-            <Info label="Gender" value={candidate.gender} />
-            <Info label="Current Address" value={candidate.currentAddress} />
-            <Info label="Permanent Address" value={candidate.permanentAddress} />
-            <Info label="Education" value={candidate.education} />
-            <Info label="Specialization" value={candidate.specialization} />
-            <Info label="Total Experience" value={candidate.totalExperience} />
-            <Info label="Current Company" value={candidate.currentCompany} />
-            <Info label="Current Designation" value={candidate.currentDesignation} />
-            <Info label="Current Salary" value={candidate.currentSalary} />
-            <Info label="Expected Salary" value={candidate.expectedSalary} />
-            <Info label="Notice Period" value={candidate.noticePeriod} />
-            <Info label="Preferred Location" value={candidate.preferredLocation} />
-            <Info label="Marriage Status" value={candidate.marriageStatus} />
-            <Info label="Key Skills" value={(candidate.keySkills || []).join(', ')} />
-            <Info label="Languages Known" value={(candidate.languagesKnown || []).join(', ')} />
-          </div>
+          <CandidateApplicationInfo candidate={candidate} />
 
           <div>
             <h3 className="text-sm font-bold uppercase text-slate-500">Uploaded Documents</h3>
@@ -305,15 +295,34 @@ export default function CandidateDetails() {
 
           <div>
             <h3 className="text-sm font-bold uppercase text-slate-500">Upload Missing Documents</h3>
-            <p className="mt-2 rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">JPG/PNG images, max 10MB each</p>
+            <p className="mt-2 rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">JPG/PNG images and PDF letters where applicable, max 10MB each</p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {candidateDocumentTypes.map((documentType) => (
+              {resumeCandidateDocumentType ? (
+                <AdminDocumentUpload
+                  key={resumeCandidateDocumentType.key}
+                  documentType={resumeCandidateDocumentType}
+                  uploadedDoc={latestDocByType[resumeCandidateDocumentType.key]}
+                  uploading={Boolean(uploadingByType[resumeCandidateDocumentType.key])}
+                  onPickFile={(file) => uploadDocument(resumeCandidateDocumentType, file)}
+                />
+              ) : null}
+              <EducationCertificateAdminUploadGroup
+                latestDocByType={latestDocByType}
+                uploadingByType={uploadingByType}
+                uploadDocument={uploadDocument}
+              />
+              <ComputerCourseAdminUploadGroup
+                latestDocByType={latestDocByType}
+                uploadingByType={uploadingByType}
+                uploadDocument={uploadDocument}
+              />
+              {otherCandidateDocumentTypes.map((documentType) => (
                 <AdminDocumentUpload
                   key={documentType.key}
                   documentType={documentType}
                   uploadedDoc={latestDocByType[documentType.key]}
                   uploading={Boolean(uploadingByType[documentType.key])}
-                  onPickFile={(file) => uploadDocument(documentType.key, file)}
+                  onPickFile={(file) => uploadDocument(documentType, file)}
                 />
               ))}
             </div>
@@ -533,7 +542,168 @@ function Info({ label, value }) {
   return (
     <div className="rounded-lg bg-slate-50 p-3">
       <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-      <p className="mt-1 break-words text-sm text-slate-900">{value || '-'}</p>
+      <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-900">{value || '-'}</p>
+    </div>
+  )
+}
+
+const hasInfoValue = (value) => {
+  if (Array.isArray(value)) return value.length > 0
+  if (value === 0) return true
+  return Boolean(String(value || '').trim())
+}
+
+const valueText = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean).join(', ')
+  return value
+}
+
+const formatAddress = (value) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+
+  return [
+    ['Village', value.village],
+    ['Taluka', value.taluka],
+    ['District', value.district],
+    ['State', value.state]
+  ]
+    .filter(([, item]) => String(item || '').trim())
+    .map(([label, item]) => `${label}: ${String(item).trim()}`)
+    .join(', ')
+}
+
+const formatSalary = (value, expected = false) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+
+  return [
+    value.netInHand ? `${expected ? 'Expected ' : ''}NET / In-hand Salary: ${value.netInHand}` : '',
+    value.grossPerMonth ? `${expected ? 'Expected ' : ''}Gross Per Month: ${value.grossPerMonth}` : '',
+    value.ctcPerMonth ? `${expected ? 'Expected ' : ''}CTC Per Month: ${value.ctcPerMonth}` : ''
+  ].filter(Boolean).join('\n')
+}
+
+const selected = (value, raw, other) => {
+  if (value) return value
+  if (raw === 'Other' || raw === 'Any Other') return other
+  return raw
+}
+
+function InfoSection({ title, items }) {
+  const visibleItems = items.filter((item) => hasInfoValue(item.value))
+  if (!visibleItems.length) return null
+
+  return (
+    <div>
+      <h3 className="mb-3 text-sm font-bold uppercase text-slate-500">{title}</h3>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {visibleItems.map((item) => (
+          <Info key={`${title}-${item.label}`} label={item.label} value={valueText(item.value)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CandidateApplicationInfo({ candidate }) {
+  const details = candidate.applicationDetails || {}
+  const personal = details.personal || {}
+  const education = details.education || {}
+  const professional = details.professional || {}
+  const referenceSuccess = details.referenceSuccess || {}
+  const family = personal.familyDetails || candidate.familyDetails || {}
+  const instituteReference = education.instituteReference || {}
+  const instituteCollege = education.instituteCollege || {}
+
+  return (
+    <div className="space-y-6">
+      <InfoSection
+        title="Personal Details"
+        items={[
+          { label: 'Full Name', value: personal.candidateName || candidate.fullName },
+          { label: 'Mobile Number', value: personal.mobileNumber || candidate.mobileNumber },
+          { label: 'WhatsApp', value: personal.whatsappNo || candidate.whatsappNo },
+          { label: 'Email', value: personal.emailId || candidate.emailId },
+          { label: 'Gender', value: personal.gender || candidate.gender },
+          { label: 'Date Of Birth', value: dateValue(personal.dateOfBirth || candidate.dateOfBirth) },
+          { label: 'Current Age', value: personal.currentAge ?? candidate.currentAge },
+          { label: 'Marital Status', value: personal.marriageStatus || candidate.marriageStatus },
+          { label: 'Aadhar Number', value: personal.aadhaarNo || candidate.aadhaarNo },
+          { label: 'PAN Number', value: personal.panNo || candidate.panNo },
+          { label: 'Current Address', value: formatAddress(personal.currentAddress) || candidate.currentAddress },
+          { label: 'Permanent Address', value: formatAddress(personal.permanentAddress) || candidate.permanentAddress }
+        ]}
+      />
+
+      <InfoSection
+        title="Family Details"
+        items={[
+          { label: 'Father / Husband Name', value: family.fatherOrHusbandName },
+          { label: 'Father Occupation', value: family.fatherOccupation },
+          { label: 'Father Mobile Number', value: family.fatherMobileNumber },
+          { label: 'Mother / Wife Name', value: family.motherOrWifeName },
+          { label: 'Mother Occupation', value: family.motherOccupation },
+          { label: 'Mother Mobile Number', value: family.motherMobileNumber },
+          { label: 'Sibling Name', value: family.siblingName },
+          { label: 'Sibling Education / Occupation', value: family.siblingEducationOccupation }
+        ]}
+      />
+
+      <InfoSection
+        title="Education Details"
+        items={[
+          { label: 'Highest Education', value: education.highestEducation || candidate.education },
+          { label: 'Year of Higher Education', value: education.yearOfHigherEducation || candidate.yearOfHigherEducation },
+          { label: 'Education Branch', value: education.branch || selected('', education.educationBranch, education.educationBranchOther) },
+          { label: 'Education Specialization', value: education.specialization || candidate.specialization },
+          { label: 'Computer Course', value: selected('', education.computerCourse, education.computerCourseOther) },
+          { label: 'Other Certification Course', value: selected('', education.certificationCourse, education.certificationCourseOther) || candidate.computerCourses },
+          { label: 'Institute Name', value: instituteReference.instituteName || candidate.collegeName },
+          { label: 'Institute Representative Name', value: instituteReference.representativeName || candidate.placementReference?.professorName },
+          { label: 'Institute Representative Designation', value: instituteReference.designation },
+          { label: 'Institute Mobile Number', value: instituteReference.mobileNumber || candidate.placementReference?.professorContactNumber },
+          { label: 'Institute Address', value: formatAddress(instituteReference.address) },
+          { label: '12th / Graduate College Name', value: instituteCollege.college12GraduateName },
+          { label: 'Post Graduate College Name', value: instituteCollege.postGraduateCollegeName },
+          { label: 'Teacher', value: instituteCollege.teacherName },
+          { label: 'Teacher Designation', value: instituteCollege.designation },
+          { label: 'Teacher Mobile Number', value: instituteCollege.mobileNumber },
+          { label: 'College Reference', value: instituteCollege.reference },
+          { label: 'College Address', value: formatAddress(instituteCollege.address) }
+        ]}
+      />
+
+      <InfoSection
+        title="Professional Details"
+        items={[
+          { label: 'Preferred Department', value: professional.preferredDepartment || candidate.interestedDepartment },
+          { label: 'Preferred Industry', value: professional.preferredIndustry || candidate.preferredIndustry },
+          { label: 'Industry Specialization', value: professional.industrySpecialization },
+          { label: 'Current Salary Per Month', value: formatSalary(professional.currentSalary) || candidate.currentSalary },
+          { label: 'Expected Salary Per Month', value: formatSalary(professional.expectedSalary, true) || candidate.expectedSalary },
+          { label: 'Current Job Location', value: professional.currentJobLocation || candidate.currentJobLocation },
+          { label: 'Preferred Job Location', value: professional.preferredJobLocation || candidate.preferredJobLocation || candidate.preferredLocation },
+          { label: 'Job Working Status', value: professional.jobWorkingStatus },
+          { label: 'Experience Type', value: professional.experienceType },
+          { label: 'Total Experience', value: professional.totalExperience ?? candidate.totalExperience },
+          { label: 'Notice Period', value: professional.noticePeriod || candidate.noticePeriod },
+          { label: 'Reason For Job Change', value: professional.reasonForJobChange || candidate.reasonForJobChange },
+          { label: 'Key Skills / Knowledge', value: professional.keySkillsKnowledge || (candidate.keySkills || []).join(', ') },
+          { label: 'Key Job Responsibility', value: professional.careerJobResponsibilities || candidate.keyResponsibilities }
+        ]}
+      />
+
+      <InfoSection
+        title="Reference Success Details"
+        items={[
+          { label: 'Business Advisor Code', value: referenceSuccess.advisorCode || candidate.advisorCode },
+          { label: 'Reference Name', value: referenceSuccess.referenceName || candidate.placementReference?.referenceBy || candidate.referenceName },
+          { label: 'Reference Mobile Number', value: referenceSuccess.referenceMobileNumber || candidate.placementReference?.referenceContactNumber },
+          { label: 'Reference Profile', value: referenceSuccess.referenceProfile },
+          { label: 'Reference Source', value: referenceSuccess.referenceSources || [] }
+        ]}
+      />
     </div>
   )
 }
@@ -574,7 +744,48 @@ function DocumentCard({ doc, onPreview }) {
   )
 }
 
-function AdminDocumentUpload({ documentType, uploadedDoc, uploading, onPickFile }) {
+function EducationCertificateAdminUploadGroup({ latestDocByType, uploadingByType, uploadDocument }) {
+  return (
+    <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-3 md:col-span-2">
+      <h3 className="text-sm font-bold text-slate-900">Education Certificates</h3>
+      <p className="mt-1 text-xs font-semibold text-slate-500">Upload level-wise certificates like 10th, 12th, Graduate, and Post Graduate.</p>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {educationCertificateDocumentTypes.map((documentType) => (
+          <AdminDocumentUpload
+            key={documentType.key}
+            documentType={documentType}
+            label={educationCertificateLabel(documentType)}
+            uploadedDoc={latestDocByType[documentType.key]}
+            uploading={Boolean(uploadingByType[documentType.key])}
+            onPickFile={(file) => uploadDocument(documentType, file)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ComputerCourseAdminUploadGroup({ latestDocByType, uploadingByType, uploadDocument }) {
+  return (
+    <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-3 md:col-span-2">
+      <h3 className="text-sm font-bold text-slate-900">Computer Courses Certificates</h3>
+      <p className="mt-1 text-xs font-semibold text-slate-500">Upload course-wise certificates like MS-CIT, CCC, Advanced Excel, Tally, AutoCAD, Typing, and CATIA.</p>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {computerCourseDocumentTypes.map((documentType) => (
+          <AdminDocumentUpload
+            key={documentType.key}
+            documentType={documentType}
+            uploadedDoc={latestDocByType[documentType.key]}
+            uploading={Boolean(uploadingByType[documentType.key])}
+            onPickFile={(file) => uploadDocument(documentType, file)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AdminDocumentUpload({ documentType, label, uploadedDoc, uploading, onPickFile }) {
   const inputId = `admin-candidate-document-${documentType.key}`
 
   return (
@@ -582,7 +793,7 @@ function AdminDocumentUpload({ documentType, uploadedDoc, uploading, onPickFile 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <label htmlFor={inputId} className="block text-sm font-bold text-slate-800">
-            {documentType.label}
+            {label || documentType.label}
           </label>
           {documentType.description ? <p className="mt-1 text-xs font-semibold text-slate-500">{documentType.description}</p> : null}
         </div>
@@ -599,7 +810,7 @@ function AdminDocumentUpload({ documentType, uploadedDoc, uploading, onPickFile 
       <input
         id={inputId}
         type="file"
-        accept="image/jpeg,image/png"
+        accept={documentType.accept}
         className="sr-only"
         disabled={uploading}
         onChange={(event) => {
