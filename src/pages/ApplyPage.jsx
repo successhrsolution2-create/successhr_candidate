@@ -983,12 +983,12 @@ function PublicShell({ children }) {
   return (
     <main className="min-h-screen bg-slate-100 px-3 py-4 text-slate-950 sm:px-5 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-4 rounded-lg bg-white px-3 py-3 shadow-sm ring-1 ring-slate-200 sm:mb-5 sm:px-5 sm:py-4">
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-              <img src="/success-logo.svg" alt="SUCCESS HR Solution" className="h-12 w-36 shrink-0 object-contain sm:h-14 sm:w-48" />
-              <div className="min-w-0">
-                <h1 className="truncate text-base font-bold text-slate-950 sm:text-2xl">Candidate Job Application Form</h1>
+        <header className="mb-4 rounded-lg bg-white px-2 py-3 shadow-sm ring-1 ring-slate-200 sm:mb-5 sm:px-5 sm:py-4">
+          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+              <img src="/success-logo.svg" alt="SUCCESS HR Solution" className="h-8 w-20 shrink-0 object-contain sm:h-14 sm:w-48" />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xs font-bold leading-4 text-slate-950 sm:text-2xl sm:leading-8">Candidate Job Application Form</h1>
               </div>
             </div>
             <span className="hidden shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 sm:inline-flex">Secure form</span>
