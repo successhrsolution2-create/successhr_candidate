@@ -646,15 +646,23 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Mother Occupation', value: family.motherOccupation },
           { label: 'Mother Mobile Number', value: family.motherMobileNumber },
           { label: 'Sibling Name', value: family.siblingName },
-          { label: 'Sibling Education / Occupation', value: family.siblingEducationOccupation }
+          { label: 'Sibling Education', value: family.siblingEducation || family.siblingEducationOccupation },
+          { label: 'Sibling Mobile Number', value: family.siblingMobileNumber },
+          { label: 'Sibling DOB', value: dateValue(family.siblingDateOfBirth) },
+          { label: 'Sibling Age', value: family.siblingAge },
+          { label: 'Sibling Gender', value: family.siblingGender },
+          { label: 'Sibling Career Profile', value: family.siblingCareerProfile },
+          { label: 'Sibling Study Standard', value: family.siblingStudyStandard },
+          { label: 'Other Study Standard', value: family.siblingStudyStandardOther },
+          { label: 'Other Career Profile', value: family.siblingCareerProfileOther }
         ]}
       />
 
       <InfoSection
         title="Education Details"
         items={[
-          { label: 'Highest Education', value: education.highestEducation || candidate.education },
-          { label: 'Year of Higher Education', value: education.yearOfHigherEducation || candidate.yearOfHigherEducation },
+          { label: 'Highest Education Like Graduate, Post Graduate', value: education.highestEducation || candidate.education },
+          { label: 'Passing Year of Education', value: education.yearOfHigherEducation || candidate.yearOfHigherEducation },
           { label: 'Education Branch', value: education.branch || selected('', education.educationBranch, education.educationBranchOther) },
           { label: 'Education Specialization', value: education.specialization || candidate.specialization },
           { label: 'Computer Course', value: selected('', education.computerCourse, education.computerCourseOther) },
@@ -664,8 +672,6 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Institute Representative Designation', value: instituteReference.designation },
           { label: 'Institute Mobile Number', value: instituteReference.mobileNumber || candidate.placementReference?.professorContactNumber },
           { label: 'Institute Address', value: formatAddress(instituteReference.address) },
-          { label: '12th / Graduate College Name', value: instituteCollege.college12GraduateName },
-          { label: 'Post Graduate College Name', value: instituteCollege.postGraduateCollegeName },
           { label: 'Teacher', value: instituteCollege.teacherName },
           { label: 'Teacher Designation', value: instituteCollege.designation },
           { label: 'Teacher Mobile Number', value: instituteCollege.mobileNumber },
@@ -680,17 +686,22 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Preferred Department', value: professional.preferredDepartment || candidate.interestedDepartment },
           { label: 'Preferred Industry', value: professional.preferredIndustry || candidate.preferredIndustry },
           { label: 'Industry Specialization', value: professional.industrySpecialization },
-          { label: 'Current Salary Per Month', value: formatSalary(professional.currentSalary) || candidate.currentSalary },
           { label: 'Expected Salary Per Month', value: formatSalary(professional.expectedSalary, true) || candidate.expectedSalary },
-          { label: 'Current Job Location', value: professional.currentJobLocation || candidate.currentJobLocation },
+          { label: 'Current Salary Per Month', value: formatSalary(professional.currentSalary) || candidate.currentSalary },
+          { label: 'Current Job Location (Taluka)', value: professional.currentJobLocation || candidate.currentJobLocation },
+          { label: 'Other Current Job Location (Taluka)', value: professional.currentJobLocationOther || candidate.currentJobLocationOther },
+          { label: 'Current Job Location (MIDC Area)', value: professional.currentJobLocationMidcArea || candidate.currentJobLocationMidcArea },
+          { label: 'Other MIDC Area', value: professional.currentJobLocationMidcAreaOther || candidate.currentJobLocationMidcAreaOther },
           { label: 'Preferred Job Location', value: professional.preferredJobLocation || candidate.preferredJobLocation || candidate.preferredLocation },
           { label: 'Job Working Status', value: professional.jobWorkingStatus },
           { label: 'Experience Type', value: professional.experienceType },
           { label: 'Total Experience', value: professional.totalExperience ?? candidate.totalExperience },
           { label: 'Notice Period', value: professional.noticePeriod || candidate.noticePeriod },
+          { label: 'Availability for Interview', value: professional.availabilityForInterview || candidate.availabilityForInterview },
+          { label: 'Interview Mode', value: professional.interviewMode || candidate.interviewMode },
           { label: 'Reason For Job Change', value: professional.reasonForJobChange || candidate.reasonForJobChange },
-          { label: 'Key Skills / Knowledge', value: professional.keySkillsKnowledge || (candidate.keySkills || []).join(', ') },
-          { label: 'Key Job Responsibility', value: professional.careerJobResponsibilities || candidate.keyResponsibilities }
+          { label: 'Key Skills You Have', value: professional.keySkillsKnowledge || (candidate.keySkills || []).join(', ') },
+          { label: 'Key Job Responsibility As Per Your Experience', value: professional.careerJobResponsibilities || candidate.keyResponsibilities }
         ]}
       />
 
@@ -701,7 +712,8 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Reference Name', value: referenceSuccess.referenceName || candidate.placementReference?.referenceBy || candidate.referenceName },
           { label: 'Reference Mobile Number', value: referenceSuccess.referenceMobileNumber || candidate.placementReference?.referenceContactNumber },
           { label: 'Reference Profile', value: referenceSuccess.referenceProfile },
-          { label: 'Reference Source', value: referenceSuccess.referenceSources || [] }
+          { label: 'Reference Source', value: referenceSuccess.referenceSources || [] },
+          { label: 'Other Reference Source', value: referenceSuccess.referenceSourceOther }
         ]}
       />
     </div>

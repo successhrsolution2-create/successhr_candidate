@@ -27,7 +27,7 @@ const addressPartFields = [
 const educationSectorOptions = ['', '10th', '12th', 'Graduate', 'PG', 'PHD', 'ITI', 'Diploma', 'Degree', 'Other']
 const higherEducationYearOptions = ['', ...Array.from({ length: 67 }, (_, index) => String(new Date().getFullYear() + 4 - index))]
 const educationBranchOptions = ['', 'Arts', 'Commerce', 'Science', 'Diploma/BE', 'Pharmacy', 'MBA', 'Nursing', 'ITI', 'Computer Application', 'Computer Science', 'Other']
-const computerCourseOptions = ['', 'MS-CIT', 'CCC', 'Advanced Excel', 'PowerPoint', 'Tally', 'AutoCAD', 'Other']
+const computerCourseOptions = ['', 'MS-CIT', 'CCC', 'Advanced Excel', 'PowerPoint', 'Tally', 'AutoCAD', 'Typing', 'Other']
 const certificationCourseOptions = ['', 'Graphic Design', 'C++', 'Java', 'PHP', 'Python', 'Web Development', 'Digital Marketing', 'Data Analytics', 'Other']
 const educationSpecializationOptions = ['', 'Chemistry', 'Microbiology', 'Physics', 'Mathematics', 'Botany', 'Zoology', 'Biotechnology', 'Biochemistry', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Computer Science', 'Information Technology', 'Accounting', 'Finance', 'Marketing', 'HR', 'Pharmacy', 'Nursing', 'Other']
 const preferredDepartmentOptions = ['', 'Accounts', 'Sales', 'Quality', 'HR', 'Admin', 'Production', 'Operations', 'Purchase', 'Store', 'Logistics', 'Dispatch', 'Customer Support', 'Marketing', 'Finance', 'IT', 'Design', 'Maintenance', 'Research & Development', 'Safety', 'Front Office', 'Back Office', 'Warehouse', 'Other']
@@ -36,11 +36,32 @@ const industrySpecializationOptions = ['', 'Manufacturing', 'Food', 'Pharma', 'P
 const jobWorkingStatusOptions = ['', 'Working', 'Jobless']
 const experienceTypeOptions = ['', 'Fresher', 'Experience']
 const noticePeriodOptions = ['', 'Immediate Joiner', '15 Days', '30 Days', '45 Days', '60 Days', '90 Days', 'Other']
+const interviewModeOptions = ['', 'Online', 'Offline', 'Face to Face']
 const reasonForJobChangeOptions = ['', 'Looking for financial and personal growth', 'Looking for opportunity in native place', 'Facing challenge in current company', 'Any Other']
-const referenceSourceOptions = ['Social Media', 'WhatsApp', 'Facebook', 'Instagram', 'LinkedIn', 'Friend', 'Relatives']
+const referenceSourceOptions = ['Social Media', 'WhatsApp', 'Facebook', 'Instagram', 'LinkedIn', 'Friend', 'Relatives', 'Other']
 const referenceProfileOptions = ['', 'Professional', 'Farmer', 'Student', 'Other']
 const maritalStatusOptions = ['', 'Married', 'Unmarried', 'Single', 'Widow']
 const genderOptions = ['', 'Male', 'Female', 'Other']
+const siblingCareerProfileOptions = ['', 'Studying', 'Own Business', 'Doing Government Job Preparation', 'Housewife', 'Farmer', 'Doing Government Job', 'Doing Private Job', 'Other']
+const siblingStudyStandardOptions = [
+  '',
+  '1st Standard',
+  '2nd Standard',
+  '3rd Standard',
+  '4th Standard',
+  '5th Standard',
+  '6th Standard',
+  '7th Standard',
+  '8th Standard',
+  '9th Standard',
+  '10th Standard',
+  '11th Standard',
+  '12th Standard',
+  'Diploma',
+  'Graduate',
+  'PG',
+  'Other'
+]
 
 const personalFields = [
   { name: 'candidateName', label: 'Candidate Name', required: true },
@@ -50,7 +71,7 @@ const personalFields = [
   { name: 'aadhaarNo', label: 'Aadhar Card Number', inputMode: 'numeric', maxLength: 12, digitsOnly: true },
   { name: 'panNo', label: 'PAN Number', maxLength: 10, uppercase: true },
   { name: 'dateOfBirth', label: 'DOB', type: 'date' },
-  { name: 'currentAge', label: 'Current Age', type: 'number' }
+  { name: 'currentAge', label: 'Current Age', type: 'number', readOnly: true }
 ]
 
 const familyFields = [
@@ -61,7 +82,15 @@ const familyFields = [
   { name: 'motherOccupation', label: 'Mother Occupation' },
   { name: 'motherMobileNumber', label: 'Mother Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
   { name: 'siblingName', label: 'Sibling Name' },
-  { name: 'siblingEducationOccupation', label: 'Sibling Education / Occupation' }
+  { name: 'siblingEducation', label: 'Sibling Education' },
+  { name: 'siblingMobileNumber', label: 'Sibling Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
+  { name: 'siblingDateOfBirth', label: 'Sibling DOB', type: 'date' },
+  { name: 'siblingAge', label: 'Sibling Age', type: 'number', readOnly: true },
+  { name: 'siblingGender', label: 'Sibling Gender', options: ['', 'Male', 'Female', 'Other'] },
+  { name: 'siblingCareerProfile', label: 'Sibling Career Profile', options: siblingCareerProfileOptions },
+  { name: 'siblingStudyStandard', label: 'Sibling Study Standard', options: siblingStudyStandardOptions, showWhen: { name: 'siblingCareerProfile', value: 'Studying' } },
+  { name: 'siblingStudyStandardOther', label: 'Other Study Standard', showWhen: { name: 'siblingStudyStandard', value: 'Other' } },
+  { name: 'siblingCareerProfileOther', label: 'Other Career Profile', showWhen: { name: 'siblingCareerProfile', value: 'Other' } }
 ]
 
 const instituteReferenceFields = [
@@ -72,19 +101,23 @@ const instituteReferenceFields = [
 ]
 
 const instituteCollegeFields = [
-  { name: 'college12GraduateName', label: '12th / Graduate College Name' },
-  { name: 'postGraduateCollegeName', label: 'Post Graduate College Name' },
   { name: 'collegeTeacherName', label: 'Teacher' },
   { name: 'collegeDesignation', label: 'Designation' },
   { name: 'collegeMobileNumber', label: 'Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
   { name: 'collegeReference', label: 'Reference' }
 ]
 
+const currentJobLocationTalukaOptions = ['', 'Sinnar', 'Nashik', 'Mumbai', 'Pune', 'Sangamner', 'Ahilyanagar', 'Sambhaji Nagar', 'Other']
+const currentJobLocationMidcAreaOptions = ['', 'Musalgaon', 'Malegaon', 'Ambad', 'Satpur', 'Other']
+
 const currentSalaryFields = [
   { name: 'netInHandSalary', label: 'NET / In-hand Salary', inputMode: 'numeric' },
   { name: 'grossSalaryPerMonth', label: 'Gross Per Month', inputMode: 'numeric' },
   { name: 'ctcSalaryPerMonth', label: 'CTC Per Month', inputMode: 'numeric' },
-  { name: 'currentJobLocation', label: 'Current Job Location' },
+  { name: 'currentJobLocation', label: 'Current Job Location (Taluka)', options: currentJobLocationTalukaOptions },
+  { name: 'currentJobLocationOther', label: 'Other Current Job Location (Taluka)', showWhen: { name: 'currentJobLocation', value: 'Other' } },
+  { name: 'currentJobLocationMidcArea', label: 'Current Job Location (MIDC Area)', options: currentJobLocationMidcAreaOptions },
+  { name: 'currentJobLocationMidcAreaOther', label: 'Other MIDC Area', showWhen: { name: 'currentJobLocationMidcArea', value: 'Other' } },
   { name: 'preferredJobLocation', label: 'Preferred Job Location' }
 ]
 
@@ -126,7 +159,15 @@ const makeEmptyForm = () => ({
   motherOccupation: '',
   motherMobileNumber: '',
   siblingName: '',
-  siblingEducationOccupation: '',
+  siblingEducation: '',
+  siblingMobileNumber: '',
+  siblingDateOfBirth: '',
+  siblingAge: '',
+  siblingGender: '',
+  siblingCareerProfile: '',
+  siblingStudyStandard: '',
+  siblingStudyStandardOther: '',
+  siblingCareerProfileOther: '',
   educationSector: '',
   educationSectorOther: '',
   yearOfHigherEducation: '',
@@ -160,6 +201,9 @@ const makeEmptyForm = () => ({
   grossSalaryPerMonth: '',
   ctcSalaryPerMonth: '',
   currentJobLocation: '',
+  currentJobLocationOther: '',
+  currentJobLocationMidcArea: '',
+  currentJobLocationMidcAreaOther: '',
   preferredJobLocation: '',
   expectedNetInHandSalary: '',
   expectedGrossSalaryPerMonth: '',
@@ -169,6 +213,9 @@ const makeEmptyForm = () => ({
   totalExperience: '',
   noticePeriod: '',
   noticePeriodOther: '',
+  availabilityInterviewStartDate: '',
+  availabilityInterviewEndDate: '',
+  interviewMode: '',
   reasonForJobChange: '',
   reasonForJobChangeOther: '',
   keySkillsKnowledge: '',
@@ -178,7 +225,8 @@ const makeEmptyForm = () => ({
   referenceMobileNumber: '',
   referenceProfile: '',
   referenceProfileOther: '',
-  referenceSources: []
+  referenceSources: [],
+  referenceSourceOther: ''
 })
 
 const text = (value) => String(value || '').trim()
@@ -251,14 +299,21 @@ const formatExpectedSalaryDetails = (form) =>
     text(form.expectedCtcSalaryPerMonth) ? `Expected CTC Per Month: ${text(form.expectedCtcSalaryPerMonth)}` : ''
   ].filter(Boolean).join('\n')
 
+const formatInterviewAvailability = (form) =>
+  [
+    text(form.availabilityInterviewStartDate) ? `Available From: ${text(form.availabilityInterviewStartDate)}` : '',
+    text(form.availabilityInterviewEndDate) ? `Available To: ${text(form.availabilityInterviewEndDate)}` : '',
+    text(form.interviewMode) ? `Interview Mode: ${text(form.interviewMode)}` : ''
+  ].filter(Boolean).join('\n')
+
 const formatEducationDetails = (form) => {
   const sector = getSelectedOptionValue(form.educationSector, form.educationSectorOther)
   const branch = getSelectedOptionValue(form.educationBranch, form.educationBranchOther)
   const specialization = getSelectedOptionValue(form.educationSpecialization, form.educationSpecializationOther)
 
   return [
-    sector ? `Highest Education: ${sector}` : '',
-    text(form.yearOfHigherEducation) ? `Year of Higher Education: ${text(form.yearOfHigherEducation)}` : '',
+    sector ? `Highest Education Like Graduate, Post Graduate: ${sector}` : '',
+    text(form.yearOfHigherEducation) ? `Passing Year of Education: ${text(form.yearOfHigherEducation)}` : '',
     branch ? `Education Branch: ${branch}` : '',
     specialization ? `Education Specialization: ${specialization}` : ''
   ].filter(Boolean).join('\n')
@@ -288,8 +343,6 @@ const formatInstituteReferenceDetails = (form) => {
 const formatInstituteCollegeDetails = (form) => {
   const collegeAddress = formatAddressParts(form.collegeAddress)
   return [
-    text(form.college12GraduateName) ? `12th / Graduate College Name: ${text(form.college12GraduateName)}` : '',
-    text(form.postGraduateCollegeName) ? `Post Graduate College Name: ${text(form.postGraduateCollegeName)}` : '',
     text(form.collegeTeacherName) ? `Teacher: ${text(form.collegeTeacherName)}` : '',
     text(form.collegeDesignation) ? `Designation: ${text(form.collegeDesignation)}` : '',
     text(form.collegeMobileNumber) ? `College Mobile Number: ${text(form.collegeMobileNumber)}` : '',
@@ -310,6 +363,30 @@ const numberOrUndefined = (value) => {
   return Number.isFinite(numeric) ? numeric : undefined
 }
 
+const dateInputToday = () => {
+  const today = new Date()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${today.getFullYear()}-${month}-${day}`
+}
+
+const calculateAgeFromDate = (value) => {
+  const [year, month, day] = String(value || '').split('-').map(Number)
+  if (!year || !month || !day) return ''
+
+  const birthDate = new Date(year, month - 1, day)
+  if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day) return ''
+
+  const today = new Date()
+  if (birthDate > today) return ''
+
+  let age = today.getFullYear() - year
+  const birthdayThisYear = new Date(today.getFullYear(), month - 1, day)
+  if (today < birthdayThisYear) age -= 1
+
+  return age >= 0 ? String(age) : ''
+}
+
 const buildApplicationDetails = (form) => ({
   personal: {
     candidateName: form.candidateName,
@@ -322,8 +399,8 @@ const buildApplicationDetails = (form) => ({
     aadhaarNo: form.aadhaarNo,
     panNo: form.panNo,
     dateOfBirth: form.dateOfBirth,
-    currentAddress: form.currentAddress,
-    permanentAddress: form.sameAsCurrentAddress ? form.currentAddress : form.permanentAddress,
+    currentAddress: form.sameAsCurrentAddress ? form.permanentAddress : form.currentAddress,
+    permanentAddress: form.permanentAddress,
     sameAsCurrentAddress: form.sameAsCurrentAddress,
     familyDetails: {
       fatherOrHusbandName: form.fatherOrHusbandName,
@@ -333,7 +410,15 @@ const buildApplicationDetails = (form) => ({
       motherOccupation: form.motherOccupation,
       motherMobileNumber: form.motherMobileNumber,
       siblingName: form.siblingName,
-      siblingEducationOccupation: form.siblingEducationOccupation
+      siblingEducation: form.siblingEducation,
+      siblingMobileNumber: form.siblingMobileNumber,
+      siblingDateOfBirth: form.siblingDateOfBirth,
+      siblingAge: form.siblingAge,
+      siblingGender: form.siblingGender,
+      siblingCareerProfile: form.siblingCareerProfile,
+      siblingStudyStandard: form.siblingCareerProfile === 'Studying' ? form.siblingStudyStandard : '',
+      siblingStudyStandardOther: form.siblingCareerProfile === 'Studying' && form.siblingStudyStandard === 'Other' ? form.siblingStudyStandardOther : '',
+      siblingCareerProfileOther: form.siblingCareerProfile === 'Other' ? form.siblingCareerProfileOther : ''
     }
   },
   education: {
@@ -389,6 +474,9 @@ const buildApplicationDetails = (form) => ({
       ctcPerMonth: form.expectedCtcSalaryPerMonth
     },
     currentJobLocation: form.currentJobLocation,
+    currentJobLocationOther: form.currentJobLocation === 'Other' ? form.currentJobLocationOther : '',
+    currentJobLocationMidcArea: form.currentJobLocationMidcArea,
+    currentJobLocationMidcAreaOther: form.currentJobLocationMidcArea === 'Other' ? form.currentJobLocationMidcAreaOther : '',
     preferredJobLocation: form.preferredJobLocation,
     jobWorkingStatus: form.jobWorkingStatus,
     experienceType: form.experienceType,
@@ -396,6 +484,10 @@ const buildApplicationDetails = (form) => ({
     noticePeriod: getSelectedOptionValue(form.noticePeriod, form.noticePeriodOther),
     noticePeriodRaw: form.noticePeriod,
     noticePeriodOther: form.noticePeriodOther,
+    availabilityForInterview: formatInterviewAvailability(form),
+    availabilityInterviewStartDate: form.availabilityInterviewStartDate,
+    availabilityInterviewEndDate: form.availabilityInterviewEndDate,
+    interviewMode: form.interviewMode,
     reasonForJobChange: getSelectedOptionValue(form.reasonForJobChange, form.reasonForJobChangeOther),
     reasonForJobChangeRaw: form.reasonForJobChange,
     reasonForJobChangeOther: form.reasonForJobChangeOther,
@@ -409,13 +501,14 @@ const buildApplicationDetails = (form) => ({
     referenceProfile: getSelectedOptionValue(form.referenceProfile, form.referenceProfileOther),
     referenceProfileRaw: form.referenceProfile,
     referenceProfileOther: form.referenceProfileOther,
-    referenceSources: form.referenceSources
+    referenceSources: form.referenceSources,
+    referenceSourceOther: form.referenceSources.includes('Other') ? form.referenceSourceOther : ''
   }
 })
 
 const buildCandidatePayload = (form) => {
-  const currentAddress = formatAddressParts(form.currentAddress)
-  const permanentAddress = form.sameAsCurrentAddress ? currentAddress : formatAddressParts(form.permanentAddress)
+  const currentAddress = formatAddressParts(form.sameAsCurrentAddress ? form.permanentAddress : form.currentAddress)
+  const permanentAddress = formatAddressParts(form.permanentAddress)
   const preferredDepartment = getSelectedOptionValue(form.preferredDepartment, form.preferredDepartmentOther)
   const preferredIndustry = getSelectedOptionValue(form.preferredIndustry, form.preferredIndustryOther)
   const industrySpecialization = getSelectedOptionValue(form.industrySpecialization, form.industrySpecializationOther)
@@ -450,11 +543,14 @@ const buildCandidatePayload = (form) => {
       industrySpecialization ? `Industry Specialization: ${industrySpecialization}` : '',
       text(form.jobWorkingStatus) ? `Job Working Status: ${text(form.jobWorkingStatus)}` : '',
       text(form.experienceType) ? `Total Experience Type: ${text(form.experienceType)}` : '',
-      noticePeriod ? `Notice Period: ${noticePeriod}` : ''
+      noticePeriod ? `Notice Period: ${noticePeriod}` : '',
+      formatInterviewAvailability(form) ? `Availability for Interview:\n${formatInterviewAvailability(form)}` : ''
     ].filter(Boolean).join('\n'),
     currentSalary,
     expectedSalary,
     noticePeriod,
+    availabilityForInterview: formatInterviewAvailability(form),
+    interviewMode: text(form.interviewMode),
     keySkills: splitTags(form.keySkillsKnowledge),
     preferredLocation: text(form.preferredJobLocation),
     marriageStatus: form.marriageStatus || undefined,
@@ -464,6 +560,9 @@ const buildCandidatePayload = (form) => {
     preferredJobLocation: text(form.preferredJobLocation),
     reasonForJobChange,
     currentJobLocation: text(form.currentJobLocation),
+    currentJobLocationOther: form.currentJobLocation === 'Other' ? text(form.currentJobLocationOther) : '',
+    currentJobLocationMidcArea: text(form.currentJobLocationMidcArea),
+    currentJobLocationMidcAreaOther: form.currentJobLocationMidcArea === 'Other' ? text(form.currentJobLocationMidcAreaOther) : '',
     placementReference: {
       professorName: text(form.instituteRepresentativeName),
       professorContactNumber: digitsOnly(form.instituteMobileNumber) || undefined,
@@ -478,7 +577,15 @@ const buildCandidatePayload = (form) => {
       motherOccupation: text(form.motherOccupation),
       motherMobileNumber: digitsOnly(form.motherMobileNumber) || undefined,
       siblingName: text(form.siblingName),
-      siblingEducationOccupation: text(form.siblingEducationOccupation)
+      siblingEducation: text(form.siblingEducation),
+      siblingMobileNumber: digitsOnly(form.siblingMobileNumber) || undefined,
+      siblingDateOfBirth: form.siblingDateOfBirth || undefined,
+      siblingAge: numberOrUndefined(form.siblingAge),
+      siblingGender: form.siblingGender || undefined,
+      siblingCareerProfile: text(form.siblingCareerProfile),
+      siblingStudyStandard: form.siblingCareerProfile === 'Studying' ? text(form.siblingStudyStandard) : '',
+      siblingStudyStandardOther: form.siblingCareerProfile === 'Studying' && form.siblingStudyStandard === 'Other' ? text(form.siblingStudyStandardOther) : '',
+      siblingCareerProfileOther: form.siblingCareerProfile === 'Other' ? text(form.siblingCareerProfileOther) : ''
     },
     advisorCode: text(form.advisorCode).toLowerCase() || undefined,
     referenceName: text(form.referenceName) || undefined,
@@ -516,7 +623,11 @@ const formFromCandidate = (candidate) => {
   next.sameAsCurrentAddress = Boolean(personal.sameAsCurrentAddress)
 
   familyFields.forEach((field) => {
-    next[field.name] = text(family[field.name])
+    next[field.name] = field.name === 'siblingEducation'
+      ? text(family.siblingEducation || family.siblingEducationOccupation)
+      : field.name === 'siblingDateOfBirth'
+        ? (family.siblingDateOfBirth ? String(family.siblingDateOfBirth).slice(0, 10) : '')
+        : text(family[field.name])
   })
 
   const sector = optionOrOther(education.educationSector || education.highestEducation, educationSectorOptions)
@@ -565,10 +676,15 @@ const formFromCandidate = (candidate) => {
   next.industrySpecialization = industrySpec.value
   next.industrySpecializationOther = text(professional.industrySpecializationOther || industrySpec.other)
 
+  const currentLocation = optionOrOther(professional.currentJobLocation || candidate.currentJobLocation, currentJobLocationTalukaOptions)
+
   next.netInHandSalary = text(professional.currentSalary?.netInHand || candidate.currentSalary)
   next.grossSalaryPerMonth = text(professional.currentSalary?.grossPerMonth)
   next.ctcSalaryPerMonth = text(professional.currentSalary?.ctcPerMonth)
-  next.currentJobLocation = text(professional.currentJobLocation || candidate.currentJobLocation)
+  next.currentJobLocation = currentLocation.value
+  next.currentJobLocationOther = text(professional.currentJobLocationOther || candidate.currentJobLocationOther || currentLocation.other)
+  next.currentJobLocationMidcArea = text(professional.currentJobLocationMidcArea || candidate.currentJobLocationMidcArea)
+  next.currentJobLocationMidcAreaOther = text(professional.currentJobLocationMidcAreaOther || candidate.currentJobLocationMidcAreaOther)
   next.preferredJobLocation = text(professional.preferredJobLocation || candidate.preferredJobLocation || candidate.preferredLocation)
   next.expectedNetInHandSalary = text(professional.expectedSalary?.netInHand || candidate.expectedSalary)
   next.expectedGrossSalaryPerMonth = text(professional.expectedSalary?.grossPerMonth)
@@ -580,6 +696,9 @@ const formFromCandidate = (candidate) => {
   const notice = optionOrOther(professional.noticePeriodRaw || professional.noticePeriod || candidate.noticePeriod, noticePeriodOptions)
   next.noticePeriod = notice.value
   next.noticePeriodOther = text(professional.noticePeriodOther || notice.other)
+  next.availabilityInterviewStartDate = text(professional.availabilityInterviewStartDate)
+  next.availabilityInterviewEndDate = text(professional.availabilityInterviewEndDate)
+  next.interviewMode = text(professional.interviewMode || candidate.interviewMode)
 
   const reason = optionOrOther(professional.reasonForJobChangeRaw || professional.reasonForJobChange || candidate.reasonForJobChange, reasonForJobChangeOptions)
   next.reasonForJobChange = reason.value
@@ -594,6 +713,7 @@ const formFromCandidate = (candidate) => {
   next.referenceProfile = profile.value
   next.referenceProfileOther = text(referenceSuccess.referenceProfileOther || profile.other)
   next.referenceSources = Array.isArray(referenceSuccess.referenceSources) ? referenceSuccess.referenceSources : []
+  next.referenceSourceOther = text(referenceSuccess.referenceSourceOther)
 
   return next
 }
@@ -629,15 +749,46 @@ export default function CandidateForm() {
   const payload = useMemo(() => buildCandidatePayload(form), [form])
 
   const update = (key, value) => {
-    setForm((current) => ({ ...current, [key]: value }))
+    setForm((current) => {
+      const next = {
+        ...current,
+        [key]: value,
+        ...(key === 'dateOfBirth' ? { currentAge: calculateAgeFromDate(value) } : {}),
+        ...(key === 'siblingDateOfBirth' ? { siblingAge: calculateAgeFromDate(value) } : {})
+      }
+
+      if (key === 'siblingCareerProfile') {
+        if (value !== 'Studying') {
+          next.siblingStudyStandard = ''
+          next.siblingStudyStandardOther = ''
+        }
+        if (value !== 'Other') {
+          next.siblingCareerProfileOther = ''
+        }
+      }
+
+      if (key === 'siblingStudyStandard' && value !== 'Other') {
+        next.siblingStudyStandardOther = ''
+      }
+
+      if (key === 'currentJobLocation' && value !== 'Other') {
+        next.currentJobLocationOther = ''
+      }
+
+      if (key === 'currentJobLocationMidcArea' && value !== 'Other') {
+        next.currentJobLocationMidcAreaOther = ''
+      }
+
+      return next
+    })
   }
 
   const updateAddress = (addressKey, field, value) => {
     setForm((current) => {
       const nextAddress = { ...current[addressKey], [field]: value }
       const next = { ...current, [addressKey]: nextAddress }
-      if (addressKey === 'currentAddress' && current.sameAsCurrentAddress) {
-        next.permanentAddress = nextAddress
+      if (addressKey === 'permanentAddress' && current.sameAsCurrentAddress) {
+        next.currentAddress = nextAddress
       }
       return next
     })
@@ -647,7 +798,7 @@ export default function CandidateForm() {
     setForm((current) => ({
       ...current,
       sameAsCurrentAddress: checked,
-      permanentAddress: checked ? current.currentAddress : current.permanentAddress
+      currentAddress: checked ? current.permanentAddress : current.currentAddress
     }))
   }
 
@@ -656,7 +807,8 @@ export default function CandidateForm() {
       ...current,
       referenceSources: current.referenceSources.includes(source)
         ? current.referenceSources.filter((item) => item !== source)
-        : [...current.referenceSources, source]
+        : [...current.referenceSources, source],
+      ...(source === 'Other' && current.referenceSources.includes(source) ? { referenceSourceOther: '' } : {})
     }))
   }
 
@@ -709,6 +861,7 @@ export default function CandidateForm() {
     const phoneChecks = [
       ['fatherMobileNumber', 'Father mobile number', 0],
       ['motherMobileNumber', 'Mother mobile number', 0],
+      ['siblingMobileNumber', 'Sibling mobile number', 0],
       ['instituteMobileNumber', 'Institute mobile number', 1],
       ['collegeMobileNumber', 'College mobile number', 1],
       ['referenceMobileNumber', 'Reference mobile number', 3]
@@ -918,6 +1071,8 @@ function renderPersonalPanel(form, update, updateAddress, toggleSameAsCurrentAdd
             value={form[field.name]}
             required={field.required}
             inputMode={field.inputMode}
+            readOnly={field.readOnly}
+            max={field.type === 'date' ? dateInputToday() : undefined}
             onChange={(value) => update(field.name, normalizeFieldValue(field, value))}
           />
         ))}
@@ -925,7 +1080,7 @@ function renderPersonalPanel(form, update, updateAddress, toggleSameAsCurrentAdd
         <SelectField label="Marital Status" value={form.marriageStatus} options={maritalStatusOptions} onChange={(value) => update('marriageStatus', value)} />
       </div>
 
-      <AddressFields title="Current Address" value={form.currentAddress} onChange={(field, value) => updateAddress('currentAddress', field, value)} />
+      <AddressFields title="Permanent Address" value={form.permanentAddress} onChange={(field, value) => updateAddress('permanentAddress', field, value)} />
 
       <div className="rounded-lg border border-slate-200 p-4">
         <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -935,25 +1090,40 @@ function renderPersonalPanel(form, update, updateAddress, toggleSameAsCurrentAdd
             onChange={(event) => toggleSameAsCurrentAddress(event.target.checked)}
             className="h-4 w-4 rounded border-slate-300"
           />
-          Permanent address same as current address
+          Current address same as permanent address
         </label>
         {!form.sameAsCurrentAddress ? (
           <div className="mt-4">
-            <AddressFields title="Permanent Address" value={form.permanentAddress} onChange={(field, value) => updateAddress('permanentAddress', field, value)} />
+            <AddressFields title="Current Address" value={form.currentAddress} onChange={(field, value) => updateAddress('currentAddress', field, value)} />
           </div>
         ) : null}
       </div>
 
       <PanelHeader title="Family Details" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {familyFields.map((field) => (
-          <TextField
-            key={field.name}
-            label={field.label}
-            value={form[field.name]}
-            inputMode={field.inputMode}
-            onChange={(value) => update(field.name, normalizeFieldValue(field, value))}
-          />
+        {familyFields
+          .filter((field) => !field.showWhen || form[field.showWhen.name] === field.showWhen.value)
+          .map((field) => (
+          field.options ? (
+            <SelectField
+              key={field.name}
+              label={field.label}
+              value={form[field.name]}
+              options={field.options}
+              onChange={(value) => update(field.name, normalizeFieldValue(field, value))}
+            />
+          ) : (
+            <TextField
+              key={field.name}
+              label={field.label}
+              value={form[field.name]}
+              type={field.type}
+              inputMode={field.inputMode}
+              readOnly={field.readOnly}
+              max={field.type === 'date' ? dateInputToday() : undefined}
+              onChange={(value) => update(field.name, normalizeFieldValue(field, value))}
+            />
+          )
         ))}
       </div>
     </div>
@@ -965,11 +1135,11 @@ function renderEducationPanel(form, update, updateAddress) {
     <div className="space-y-6">
       <PanelHeader title="Education Details" />
       <div className="grid gap-4">
-        <SelectField label="Highest Education" value={form.educationSector} options={educationSectorOptions} onChange={(value) => update('educationSector', value)} />
-        <SelectField label="Year of Higher Education" value={form.yearOfHigherEducation} options={higherEducationYearOptions} onChange={(value) => update('yearOfHigherEducation', value)} />
+        <SelectField label="Highest Education Like Graduate, Post Graduate" value={form.educationSector} options={educationSectorOptions} onChange={(value) => update('educationSector', value)} />
+        <SelectField label="Passing Year of Education" value={form.yearOfHigherEducation} options={higherEducationYearOptions} onChange={(value) => update('yearOfHigherEducation', value)} />
         {form.educationSector === 'Other' ? <TextField label="Other Highest Education" value={form.educationSectorOther} onChange={(value) => update('educationSectorOther', value)} /> : null}
         <SelectField label="Education Branch" value={form.educationBranch} options={educationBranchOptions} onChange={(value) => update('educationBranch', value)} />
-        {form.educationBranch === 'Other' ? <TextField label="Other Branch" value={form.educationBranchOther} onChange={(value) => update('educationBranchOther', value)} /> : null}
+        {form.educationBranch === 'Other' ? <TextField label="Mention Your Other Branch" value={form.educationBranchOther} onChange={(value) => update('educationBranchOther', value)} /> : null}
         <SelectField label="Education Specialization" value={form.educationSpecialization} options={educationSpecializationOptions} onChange={(value) => update('educationSpecialization', value)} />
         {form.educationSpecialization === 'Other' ? <TextField label="Special Subject / Remark" value={form.educationSpecializationOther} onChange={(value) => update('educationSpecializationOther', value)} /> : null}
       </div>
@@ -988,7 +1158,7 @@ function renderEducationPanel(form, update, updateAddress) {
       </div>
       <AddressFields title="Institute Address" value={form.instituteAddress} onChange={(field, value) => updateAddress('instituteAddress', field, value)} />
 
-      <PanelHeader title="Institute / College Details" />
+      <PanelHeader title="Institute Details" />
       <div className="grid gap-4">
         {instituteCollegeFields.map((field) => (
           <TextField
@@ -1002,7 +1172,7 @@ function renderEducationPanel(form, update, updateAddress) {
       </div>
       <AddressFields title="College Address" value={form.collegeAddress} onChange={(field, value) => updateAddress('collegeAddress', field, value)} />
 
-      <PanelHeader title="Courses & Certifications" />
+      <PanelHeader title="Other Computer Class Or Certification Details" />
       <div className="grid gap-4">
         <SelectField label="Computer Courses" value={form.computerCourse} options={computerCourseOptions} onChange={(value) => update('computerCourse', value)} />
         <SelectField label="Other Certification Courses" value={form.certificationCourse} options={certificationCourseOptions} onChange={(value) => update('certificationCourse', value)} />
@@ -1026,13 +1196,6 @@ function renderProfessionalPanel(form, update) {
         {form.industrySpecialization === 'Other' ? <TextField label="Other Industry Specialization" value={form.industrySpecializationOther} onChange={(value) => update('industrySpecializationOther', value)} /> : null}
       </div>
 
-      <PanelHeader title="Current Salary Per Month" />
-      <div className="grid gap-4">
-        {currentSalaryFields.map((field) => (
-          <TextField key={field.name} label={field.label} value={form[field.name]} inputMode={field.inputMode} onChange={(value) => update(field.name, value)} />
-        ))}
-      </div>
-
       <PanelHeader title="Expected Salary Per Month" />
       <div className="grid gap-4">
         {expectedSalaryFields.map((field) => (
@@ -1040,19 +1203,35 @@ function renderProfessionalPanel(form, update) {
         ))}
       </div>
 
+      <PanelHeader title="Current Salary Per Month" />
+      <div className="grid gap-4">
+        {currentSalaryFields
+          .filter((field) => !field.showWhen || form[field.showWhen.name] === field.showWhen.value)
+          .map((field) => (
+          field.options ? (
+            <SelectField key={field.name} label={field.label} value={form[field.name]} options={field.options} onChange={(value) => update(field.name, value)} />
+          ) : (
+            <TextField key={field.name} label={field.label} value={form[field.name]} inputMode={field.inputMode} onChange={(value) => update(field.name, value)} />
+          )
+        ))}
+      </div>
+
       <div className="grid gap-4">
         <SelectField label="Job Working Status" value={form.jobWorkingStatus} options={jobWorkingStatusOptions} onChange={(value) => update('jobWorkingStatus', value)} />
         <SelectField label="Total Year of Experience" value={form.experienceType} options={experienceTypeOptions} onChange={(value) => update('experienceType', value)} />
-        {form.experienceType === 'Experience' ? <TextField label="Enter Experience" value={form.totalExperience} type="number" onChange={(value) => update('totalExperience', value)} /> : null}
+        {form.experienceType === 'Experience' ? <TextField label="Enter Total Year of Experience" value={form.totalExperience} type="number" onChange={(value) => update('totalExperience', value)} /> : null}
         <SelectField label="Notice Period" value={form.noticePeriod} options={noticePeriodOptions} onChange={(value) => update('noticePeriod', value)} />
-        {form.noticePeriod === 'Other' ? <TextField label="Other Notice Period" value={form.noticePeriodOther} onChange={(value) => update('noticePeriodOther', value)} /> : null}
+        {form.noticePeriod === 'Other' ? <TextField label="Other Notice Period" value={form.noticePeriodOther} placeholder="Enter in days or month" onChange={(value) => update('noticePeriodOther', value)} /> : null}
+        <TextField label="Available From" value={form.availabilityInterviewStartDate} type="date" onChange={(value) => update('availabilityInterviewStartDate', value)} />
+        <TextField label="Available To" value={form.availabilityInterviewEndDate} type="date" onChange={(value) => update('availabilityInterviewEndDate', value)} />
+        <SelectField label="Interview Mode" value={form.interviewMode} options={interviewModeOptions} onChange={(value) => update('interviewMode', value)} />
         <SelectField label="Reason For Job Change" value={form.reasonForJobChange} options={reasonForJobChangeOptions} onChange={(value) => update('reasonForJobChange', value)} />
         {form.reasonForJobChange === 'Any Other' ? <TextField label="Other Reason" value={form.reasonForJobChangeOther} onChange={(value) => update('reasonForJobChangeOther', value)} /> : null}
       </div>
 
       <div className="grid gap-4">
-        <TextField label="Key skills / knowledge you have, especially for fresher" value={form.keySkillsKnowledge} onChange={(value) => update('keySkillsKnowledge', value)} />
-        <TextField label="Key job responsibility you handled in your career experience" value={form.careerJobResponsibilities} onChange={(value) => update('careerJobResponsibilities', value)} />
+        <TextAreaField label="Key skills you have" value={form.keySkillsKnowledge} onChange={(value) => update('keySkillsKnowledge', value)} />
+        <TextAreaField label="Key job responsibility as per your experience" value={form.careerJobResponsibilities} onChange={(value) => update('careerJobResponsibilities', value)} />
       </div>
     </div>
   )
@@ -1062,16 +1241,13 @@ function renderReferencePanel(form, update, toggleReferenceSource) {
   return (
     <div className="space-y-6">
       <PanelHeader title="Reference Success Details" />
-      <div className="grid gap-4 md:grid-cols-2">
-        <TextField label="Business Advisor Code" value={form.advisorCode} onChange={(value) => update('advisorCode', value)} />
-      </div>
-
       <PanelHeader title="Reference Details" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <TextField label="Reference Name" value={form.referenceName} onChange={(value) => update('referenceName', value)} />
         <TextField label="Reference Mobile Number" value={form.referenceMobileNumber} inputMode="numeric" onChange={(value) => update('referenceMobileNumber', digitsOnly(value).slice(0, 10))} />
         <SelectField label="Reference Profile" value={form.referenceProfile} options={referenceProfileOptions} onChange={(value) => update('referenceProfile', value)} />
         {form.referenceProfile === 'Other' ? <TextField label="Other Reference Profile" value={form.referenceProfileOther} onChange={(value) => update('referenceProfileOther', value)} /> : null}
+        <TextField label="Business Advisor Code" value={form.advisorCode} onChange={(value) => update('advisorCode', value)} />
       </div>
 
       <PanelHeader title="Reference Source" />
@@ -1088,6 +1264,11 @@ function renderReferencePanel(form, update, toggleReferenceSource) {
           </label>
         ))}
       </div>
+      {form.referenceSources.includes('Other') ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField label="Other Reference Source" value={form.referenceSourceOther} onChange={(value) => update('referenceSourceOther', value)} />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -1096,7 +1277,7 @@ function PanelHeader({ title }) {
   return <h2 className="border-b border-slate-200 pb-2 text-base font-bold text-slate-950">{title}</h2>
 }
 
-function TextField({ label, value, onChange, type = 'text', inputMode, required = false }) {
+function TextField({ label, value, onChange, type = 'text', inputMode, required = false, readOnly = false, max, placeholder }) {
   return (
     <label className="text-sm font-semibold text-slate-700">
       {label}
@@ -1105,8 +1286,28 @@ function TextField({ label, value, onChange, type = 'text', inputMode, required 
         type={type}
         inputMode={inputMode}
         value={value || ''}
+        max={max}
+        placeholder={placeholder}
+        readOnly={readOnly}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100"
+        className={`mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100 ${readOnly ? 'bg-slate-50 text-slate-600' : 'bg-white'}`}
+      />
+    </label>
+  )
+}
+
+function TextAreaField({ label, value, onChange, required = false, readOnly = false, placeholder, rows = 4 }) {
+  return (
+    <label className="text-sm font-semibold text-slate-700">
+      {label}
+      {required ? <span className="text-rose-600"> *</span> : null}
+      <textarea
+        rows={rows}
+        value={value || ''}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        onChange={(event) => onChange(event.target.value)}
+        className={`mt-1 w-full resize-y rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100 ${readOnly ? 'bg-slate-50 text-slate-600' : 'bg-white'}`}
       />
     </label>
   )

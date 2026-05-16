@@ -129,6 +129,13 @@ export const candidateDocumentTypes = [
     typeMessage: 'must be a JPG, PNG, or PDF file'
   },
   {
+    key: 'otherCertificationCertificate',
+    label: 'Other Certification Course Certificate',
+    accept: letterAccept,
+    allowedTypes: letterTypes,
+    typeMessage: 'must be a JPG, PNG, or PDF file'
+  },
+  {
     key: 'aadharCard',
     label: 'Aadhar Card',
     accept: letterAccept,
@@ -144,7 +151,7 @@ export const candidateDocumentTypes = [
   },
   {
     key: 'passportSizePhoto',
-    label: 'Passport Size Photo',
+    label: 'Professional Photo Of Candidate',
     accept: imageAccept,
     allowedTypes: imageTypes,
     typeMessage: 'must be a JPG or PNG image'
@@ -188,7 +195,8 @@ export const computerCourseDocumentKeys = new Set([
   'autoCadCertificate',
   'typingCertificate',
   'catiaCertificate',
-  'computerCourseCertificate'
+  'computerCourseCertificate',
+  'otherCertificationCertificate'
 ])
 
 export const computerCourseDocumentTypes = candidateDocumentTypes.filter((documentType) =>
