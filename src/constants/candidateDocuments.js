@@ -122,6 +122,20 @@ export const candidateDocumentTypes = [
     typeMessage: 'must be a JPG, PNG, or PDF file'
   },
   {
+    key: 'sapCertification',
+    label: 'SAP Certification',
+    accept: letterAccept,
+    allowedTypes: letterTypes,
+    typeMessage: 'must be a JPG, PNG, or PDF file'
+  },
+  {
+    key: 'cCppCertification',
+    label: 'C/C++ Certification',
+    accept: letterAccept,
+    allowedTypes: letterTypes,
+    typeMessage: 'must be a JPG, PNG, or PDF file'
+  },
+  {
     key: 'computerCourseCertificate',
     label: 'Other Computer Course Certificate',
     accept: letterAccept,
@@ -195,6 +209,8 @@ export const computerCourseDocumentKeys = new Set([
   'autoCadCertificate',
   'typingCertificate',
   'catiaCertificate',
+  'sapCertification',
+  'cCppCertification',
   'computerCourseCertificate',
   'otherCertificationCertificate'
 ])

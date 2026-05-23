@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { FileImage, X } from 'lucide-react'
+import { FileImage, Plus, Trash2, X } from 'lucide-react'
 import api from '../../../api/axios'
 import Skeleton from '../../../components/Skeleton'
 import {
@@ -40,6 +40,7 @@ const interviewModeOptions = ['', 'Online', 'Offline', 'Face to Face']
 const reasonForJobChangeOptions = ['', 'Looking for financial and personal growth', 'Looking for opportunity in native place', 'Facing challenge in current company', 'Any Other']
 const referenceSourceOptions = ['Social Media', 'WhatsApp', 'Facebook', 'Instagram', 'LinkedIn', 'Friend', 'Relatives', 'Other']
 const referenceProfileOptions = ['', 'Professional', 'Farmer', 'Student', 'Other']
+const referenceRelationOptions = ['', 'Brother', 'Sister', 'Father', 'Mother', 'Spouse', 'Relative', 'Friend', 'Colleague', 'Neighbor', 'Teacher', 'Other']
 const maritalStatusOptions = ['', 'Married', 'Unmarried', 'Single', 'Widow']
 const genderOptions = ['', 'Male', 'Female', 'Other']
 const siblingCareerProfileOptions = ['', 'Studying', 'Own Business', 'Doing Government Job Preparation', 'Housewife', 'Farmer', 'Doing Government Job', 'Doing Private Job', 'Other']
@@ -63,6 +64,32 @@ const siblingStudyStandardOptions = [
   'Other'
 ]
 
+const makeEmptySibling = () => ({
+  siblingName: '',
+  siblingEducation: '',
+  siblingMobileNumber: '',
+  siblingDateOfBirth: '',
+  siblingAge: '',
+  siblingGender: '',
+  siblingCareerProfile: '',
+  siblingStudyStandard: '',
+  siblingStudyStandardOther: '',
+  siblingCareerProfileOther: ''
+})
+
+const siblingFields = [
+  { name: 'siblingName', label: 'Sibling / Brother / Sister Name' },
+  { name: 'siblingEducation', label: 'Sibling / Brother / Sister Education' },
+  { name: 'siblingMobileNumber', label: 'Sibling / Brother / Sister Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
+  { name: 'siblingDateOfBirth', label: 'Sibling / Brother / Sister DOB', type: 'date' },
+  { name: 'siblingAge', label: 'Sibling / Brother / Sister Age', type: 'number', readOnly: true },
+  { name: 'siblingGender', label: 'Sibling / Brother / Sister Gender', options: ['', 'Male', 'Female', 'Other'] },
+  { name: 'siblingCareerProfile', label: 'Sibling / Brother / Sister Career Profile', options: siblingCareerProfileOptions },
+  { name: 'siblingStudyStandard', label: 'Sibling / Brother / Sister Study Standard', options: siblingStudyStandardOptions, showWhen: { name: 'siblingCareerProfile', value: 'Studying' } },
+  { name: 'siblingStudyStandardOther', label: 'Other Sibling / Brother / Sister Study Standard', showWhen: { name: 'siblingStudyStandard', value: 'Other' } },
+  { name: 'siblingCareerProfileOther', label: 'Other Sibling / Brother / Sister Career Profile', showWhen: { name: 'siblingCareerProfile', value: 'Other' } }
+]
+
 const personalFields = [
   { name: 'candidateName', label: 'Candidate Name', required: true },
   { name: 'mobileNumber', label: 'Mobile Number', required: true, inputMode: 'numeric', maxLength: 10, digitsOnly: true },
@@ -76,26 +103,16 @@ const personalFields = [
 
 const familyFields = [
   { name: 'fatherOrHusbandName', label: 'Father / Husband Name' },
-  { name: 'fatherOccupation', label: 'Father Occupation' },
-  { name: 'fatherMobileNumber', label: 'Father Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
+  { name: 'fatherOccupation', label: 'Father / Husband Occupation' },
+  { name: 'fatherMobileNumber', label: 'Father / Husband Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
   { name: 'motherOrWifeName', label: 'Mother / Wife Name' },
-  { name: 'motherOccupation', label: 'Mother Occupation' },
-  { name: 'motherMobileNumber', label: 'Mother Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
-  { name: 'siblingName', label: 'Sibling Name' },
-  { name: 'siblingEducation', label: 'Sibling Education' },
-  { name: 'siblingMobileNumber', label: 'Sibling Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true },
-  { name: 'siblingDateOfBirth', label: 'Sibling DOB', type: 'date' },
-  { name: 'siblingAge', label: 'Sibling Age', type: 'number', readOnly: true },
-  { name: 'siblingGender', label: 'Sibling Gender', options: ['', 'Male', 'Female', 'Other'] },
-  { name: 'siblingCareerProfile', label: 'Sibling Career Profile', options: siblingCareerProfileOptions },
-  { name: 'siblingStudyStandard', label: 'Sibling Study Standard', options: siblingStudyStandardOptions, showWhen: { name: 'siblingCareerProfile', value: 'Studying' } },
-  { name: 'siblingStudyStandardOther', label: 'Other Study Standard', showWhen: { name: 'siblingStudyStandard', value: 'Other' } },
-  { name: 'siblingCareerProfileOther', label: 'Other Career Profile', showWhen: { name: 'siblingCareerProfile', value: 'Other' } }
+  { name: 'motherOccupation', label: 'Mother / Wife Occupation' },
+  { name: 'motherMobileNumber', label: 'Mother / Wife Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true }
 ]
 
 const instituteReferenceFields = [
-  { name: 'instituteName', label: 'Institute Name' },
-  { name: 'instituteRepresentativeName', label: 'Institute Representative Name' },
+  { name: 'instituteName', label: 'College Name' },
+  { name: 'instituteRepresentativeName', label: 'College Representative Name' },
   { name: 'instituteDesignation', label: 'Designation' },
   { name: 'instituteMobileNumber', label: 'Mobile Number', inputMode: 'numeric', maxLength: 10, digitsOnly: true }
 ]
@@ -124,7 +141,8 @@ const currentSalaryFields = [
 const expectedSalaryFields = [
   { name: 'expectedNetInHandSalary', label: 'Expected NET / In-hand Salary', inputMode: 'numeric' },
   { name: 'expectedGrossSalaryPerMonth', label: 'Expected Gross Per Month', inputMode: 'numeric' },
-  { name: 'expectedCtcSalaryPerMonth', label: 'Expected CTC Per Month', inputMode: 'numeric' }
+  { name: 'expectedCtcSalaryPerMonth', label: 'Expected CTC Per Month', inputMode: 'numeric' },
+  { name: 'expectedSalaryNegotiable', label: 'Expected Salary Negotiable', options: ['', 'Yes', 'No'] }
 ]
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -168,6 +186,7 @@ const makeEmptyForm = () => ({
   siblingStudyStandard: '',
   siblingStudyStandardOther: '',
   siblingCareerProfileOther: '',
+  siblings: [makeEmptySibling()],
   educationSector: '',
   educationSectorOther: '',
   yearOfHigherEducation: '',
@@ -208,6 +227,7 @@ const makeEmptyForm = () => ({
   expectedNetInHandSalary: '',
   expectedGrossSalaryPerMonth: '',
   expectedCtcSalaryPerMonth: '',
+  expectedSalaryNegotiable: '',
   jobWorkingStatus: '',
   experienceType: '',
   totalExperience: '',
@@ -216,6 +236,7 @@ const makeEmptyForm = () => ({
   availabilityInterviewStartDate: '',
   availabilityInterviewEndDate: '',
   interviewMode: '',
+  onlineInterviewMode: '',
   reasonForJobChange: '',
   reasonForJobChangeOther: '',
   keySkillsKnowledge: '',
@@ -225,6 +246,8 @@ const makeEmptyForm = () => ({
   referenceMobileNumber: '',
   referenceProfile: '',
   referenceProfileOther: '',
+  referenceRelation: '',
+  referenceRelationOther: '',
   referenceSources: [],
   referenceSourceOther: ''
 })
@@ -296,14 +319,16 @@ const formatExpectedSalaryDetails = (form) =>
   [
     text(form.expectedNetInHandSalary) ? `Expected NET / In-hand Salary: ${text(form.expectedNetInHandSalary)}` : '',
     text(form.expectedGrossSalaryPerMonth) ? `Expected Gross Per Month: ${text(form.expectedGrossSalaryPerMonth)}` : '',
-    text(form.expectedCtcSalaryPerMonth) ? `Expected CTC Per Month: ${text(form.expectedCtcSalaryPerMonth)}` : ''
+    text(form.expectedCtcSalaryPerMonth) ? `Expected CTC Per Month: ${text(form.expectedCtcSalaryPerMonth)}` : '',
+    text(form.expectedSalaryNegotiable) ? `Expected Salary Negotiable: ${text(form.expectedSalaryNegotiable)}` : ''
   ].filter(Boolean).join('\n')
 
 const formatInterviewAvailability = (form) =>
   [
     text(form.availabilityInterviewStartDate) ? `Available From: ${text(form.availabilityInterviewStartDate)}` : '',
     text(form.availabilityInterviewEndDate) ? `Available To: ${text(form.availabilityInterviewEndDate)}` : '',
-    text(form.interviewMode) ? `Interview Mode: ${text(form.interviewMode)}` : ''
+    text(form.interviewMode) ? `Interview Mode: ${text(form.interviewMode)}` : '',
+    text(form.interviewMode) === 'Online' && text(form.onlineInterviewMode) ? `Online Interview Mode: ${text(form.onlineInterviewMode)}` : ''
   ].filter(Boolean).join('\n')
 
 const formatEducationDetails = (form) => {
@@ -332,11 +357,11 @@ const formatComputerCourses = (form) => {
 const formatInstituteReferenceDetails = (form) => {
   const instituteAddress = formatAddressParts(form.instituteAddress)
   return [
-    text(form.instituteName) ? `Institute Name: ${text(form.instituteName)}` : '',
-    text(form.instituteRepresentativeName) ? `Institute Representative Name: ${text(form.instituteRepresentativeName)}` : '',
+    text(form.instituteName) ? `College Name: ${text(form.instituteName)}` : '',
+    text(form.instituteRepresentativeName) ? `College Representative Name: ${text(form.instituteRepresentativeName)}` : '',
     text(form.instituteDesignation) ? `Designation: ${text(form.instituteDesignation)}` : '',
-    text(form.instituteMobileNumber) ? `Institute Mobile Number: ${text(form.instituteMobileNumber)}` : '',
-    instituteAddress ? `Institute Address: ${instituteAddress}` : ''
+    text(form.instituteMobileNumber) ? `College Mobile Number: ${text(form.instituteMobileNumber)}` : '',
+    instituteAddress ? `College Address: ${instituteAddress}` : ''
   ].filter(Boolean).join('\n')
 }
 
@@ -387,6 +412,40 @@ const calculateAgeFromDate = (value) => {
   return age >= 0 ? String(age) : ''
 }
 
+const siblingHasValue = (sibling = {}) =>
+  Object.values(sibling).some((value) => String(value ?? '').trim())
+
+const normalizeSiblingRows = (siblings) => {
+  const rows = Array.isArray(siblings) && siblings.length ? siblings : [makeEmptySibling()]
+  return rows.map((sibling) => ({ ...makeEmptySibling(), ...(sibling || {}) }))
+}
+
+const sanitizedSiblingRows = (siblings) =>
+  normalizeSiblingRows(siblings)
+    .map((sibling) => ({
+      ...sibling,
+      siblingStudyStandard: sibling.siblingCareerProfile === 'Studying' ? sibling.siblingStudyStandard : '',
+      siblingStudyStandardOther: sibling.siblingCareerProfile === 'Studying' && sibling.siblingStudyStandard === 'Other' ? sibling.siblingStudyStandardOther : '',
+      siblingCareerProfileOther: sibling.siblingCareerProfile === 'Other' ? sibling.siblingCareerProfileOther : ''
+    }))
+    .filter(siblingHasValue)
+
+const firstSiblingFields = (siblings) => {
+  const firstSibling = sanitizedSiblingRows(siblings)[0] || makeEmptySibling()
+  return {
+    siblingName: firstSibling.siblingName,
+    siblingEducation: firstSibling.siblingEducation,
+    siblingMobileNumber: firstSibling.siblingMobileNumber,
+    siblingDateOfBirth: firstSibling.siblingDateOfBirth,
+    siblingAge: firstSibling.siblingAge,
+    siblingGender: firstSibling.siblingGender,
+    siblingCareerProfile: firstSibling.siblingCareerProfile,
+    siblingStudyStandard: firstSibling.siblingStudyStandard,
+    siblingStudyStandardOther: firstSibling.siblingStudyStandardOther,
+    siblingCareerProfileOther: firstSibling.siblingCareerProfileOther
+  }
+}
+
 const buildApplicationDetails = (form) => ({
   personal: {
     candidateName: form.candidateName,
@@ -409,16 +468,8 @@ const buildApplicationDetails = (form) => ({
       motherOrWifeName: form.motherOrWifeName,
       motherOccupation: form.motherOccupation,
       motherMobileNumber: form.motherMobileNumber,
-      siblingName: form.siblingName,
-      siblingEducation: form.siblingEducation,
-      siblingMobileNumber: form.siblingMobileNumber,
-      siblingDateOfBirth: form.siblingDateOfBirth,
-      siblingAge: form.siblingAge,
-      siblingGender: form.siblingGender,
-      siblingCareerProfile: form.siblingCareerProfile,
-      siblingStudyStandard: form.siblingCareerProfile === 'Studying' ? form.siblingStudyStandard : '',
-      siblingStudyStandardOther: form.siblingCareerProfile === 'Studying' && form.siblingStudyStandard === 'Other' ? form.siblingStudyStandardOther : '',
-      siblingCareerProfileOther: form.siblingCareerProfile === 'Other' ? form.siblingCareerProfileOther : ''
+      ...firstSiblingFields(form.siblings),
+      siblings: sanitizedSiblingRows(form.siblings)
     }
   },
   education: {
@@ -471,8 +522,10 @@ const buildApplicationDetails = (form) => ({
     expectedSalary: {
       netInHand: form.expectedNetInHandSalary,
       grossPerMonth: form.expectedGrossSalaryPerMonth,
-      ctcPerMonth: form.expectedCtcSalaryPerMonth
+      ctcPerMonth: form.expectedCtcSalaryPerMonth,
+      negotiable: form.expectedSalaryNegotiable
     },
+    expectedSalaryNegotiable: form.expectedSalaryNegotiable,
     currentJobLocation: form.currentJobLocation,
     currentJobLocationOther: form.currentJobLocation === 'Other' ? form.currentJobLocationOther : '',
     currentJobLocationMidcArea: form.currentJobLocationMidcArea,
@@ -488,6 +541,7 @@ const buildApplicationDetails = (form) => ({
     availabilityInterviewStartDate: form.availabilityInterviewStartDate,
     availabilityInterviewEndDate: form.availabilityInterviewEndDate,
     interviewMode: form.interviewMode,
+    onlineInterviewMode: form.interviewMode === 'Online' ? form.onlineInterviewMode : '',
     reasonForJobChange: getSelectedOptionValue(form.reasonForJobChange, form.reasonForJobChangeOther),
     reasonForJobChangeRaw: form.reasonForJobChange,
     reasonForJobChangeOther: form.reasonForJobChangeOther,
@@ -501,6 +555,9 @@ const buildApplicationDetails = (form) => ({
     referenceProfile: getSelectedOptionValue(form.referenceProfile, form.referenceProfileOther),
     referenceProfileRaw: form.referenceProfile,
     referenceProfileOther: form.referenceProfileOther,
+    referenceRelation: getSelectedOptionValue(form.referenceRelation, form.referenceRelationOther),
+    referenceRelationRaw: form.referenceRelation,
+    referenceRelationOther: form.referenceRelationOther,
     referenceSources: form.referenceSources,
     referenceSourceOther: form.referenceSources.includes('Other') ? form.referenceSourceOther : ''
   }
@@ -576,16 +633,8 @@ const buildCandidatePayload = (form) => {
       motherOrWifeName: text(form.motherOrWifeName),
       motherOccupation: text(form.motherOccupation),
       motherMobileNumber: digitsOnly(form.motherMobileNumber) || undefined,
-      siblingName: text(form.siblingName),
-      siblingEducation: text(form.siblingEducation),
-      siblingMobileNumber: digitsOnly(form.siblingMobileNumber) || undefined,
-      siblingDateOfBirth: form.siblingDateOfBirth || undefined,
-      siblingAge: numberOrUndefined(form.siblingAge),
-      siblingGender: form.siblingGender || undefined,
-      siblingCareerProfile: text(form.siblingCareerProfile),
-      siblingStudyStandard: form.siblingCareerProfile === 'Studying' ? text(form.siblingStudyStandard) : '',
-      siblingStudyStandardOther: form.siblingCareerProfile === 'Studying' && form.siblingStudyStandard === 'Other' ? text(form.siblingStudyStandardOther) : '',
-      siblingCareerProfileOther: form.siblingCareerProfile === 'Other' ? text(form.siblingCareerProfileOther) : ''
+      ...firstSiblingFields(form.siblings),
+      siblings: sanitizedSiblingRows(form.siblings)
     },
     advisorCode: text(form.advisorCode).toLowerCase() || undefined,
     referenceName: text(form.referenceName) || undefined,
@@ -629,6 +678,21 @@ const formFromCandidate = (candidate) => {
         ? (family.siblingDateOfBirth ? String(family.siblingDateOfBirth).slice(0, 10) : '')
         : text(family[field.name])
   })
+  next.siblings = Array.isArray(family.siblings) && family.siblings.length
+    ? normalizeSiblingRows(family.siblings)
+    : normalizeSiblingRows([{
+        siblingName: family.siblingName,
+        siblingEducation: family.siblingEducation || family.siblingEducationOccupation,
+        siblingMobileNumber: family.siblingMobileNumber,
+        siblingDateOfBirth: family.siblingDateOfBirth ? String(family.siblingDateOfBirth).slice(0, 10) : '',
+        siblingAge: family.siblingAge,
+        siblingGender: family.siblingGender,
+        siblingCareerProfile: family.siblingCareerProfile,
+        siblingStudyStandard: family.siblingStudyStandard,
+        siblingStudyStandardOther: family.siblingStudyStandardOther,
+        siblingCareerProfileOther: family.siblingCareerProfileOther
+      }])
+  Object.assign(next, firstSiblingFields(next.siblings))
 
   const sector = optionOrOther(education.educationSector || education.highestEducation, educationSectorOptions)
   next.educationSector = sector.value
@@ -689,6 +753,7 @@ const formFromCandidate = (candidate) => {
   next.expectedNetInHandSalary = text(professional.expectedSalary?.netInHand || candidate.expectedSalary)
   next.expectedGrossSalaryPerMonth = text(professional.expectedSalary?.grossPerMonth)
   next.expectedCtcSalaryPerMonth = text(professional.expectedSalary?.ctcPerMonth)
+  next.expectedSalaryNegotiable = text(professional.expectedSalary?.negotiable || professional.expectedSalaryNegotiable)
   next.jobWorkingStatus = text(professional.jobWorkingStatus)
   next.experienceType = text(professional.experienceType) || (candidate.totalExperience ? 'Experience' : '')
   next.totalExperience = text(professional.totalExperience ?? candidate.totalExperience)
@@ -699,6 +764,7 @@ const formFromCandidate = (candidate) => {
   next.availabilityInterviewStartDate = text(professional.availabilityInterviewStartDate)
   next.availabilityInterviewEndDate = text(professional.availabilityInterviewEndDate)
   next.interviewMode = text(professional.interviewMode || candidate.interviewMode)
+  next.onlineInterviewMode = text(professional.onlineInterviewMode)
 
   const reason = optionOrOther(professional.reasonForJobChangeRaw || professional.reasonForJobChange || candidate.reasonForJobChange, reasonForJobChangeOptions)
   next.reasonForJobChange = reason.value
@@ -712,6 +778,9 @@ const formFromCandidate = (candidate) => {
   const profile = optionOrOther(referenceSuccess.referenceProfileRaw || referenceSuccess.referenceProfile, referenceProfileOptions)
   next.referenceProfile = profile.value
   next.referenceProfileOther = text(referenceSuccess.referenceProfileOther || profile.other)
+  const relation = optionOrOther(referenceSuccess.referenceRelationRaw || referenceSuccess.referenceRelation, referenceRelationOptions)
+  next.referenceRelation = relation.value
+  next.referenceRelationOther = text(referenceSuccess.referenceRelationOther || relation.other)
   next.referenceSources = Array.isArray(referenceSuccess.referenceSources) ? referenceSuccess.referenceSources : []
   next.referenceSourceOther = text(referenceSuccess.referenceSourceOther)
 
@@ -781,6 +850,15 @@ export default function CandidateForm() {
 
       return next
     })
+  }
+
+  const updateSiblings = (siblings) => {
+    const nextSiblings = normalizeSiblingRows(siblings)
+    setForm((current) => ({
+      ...current,
+      ...firstSiblingFields(nextSiblings),
+      siblings: nextSiblings
+    }))
   }
 
   const updateAddress = (addressKey, field, value) => {
@@ -861,7 +939,6 @@ export default function CandidateForm() {
     const phoneChecks = [
       ['fatherMobileNumber', 'Father mobile number', 0],
       ['motherMobileNumber', 'Mother mobile number', 0],
-      ['siblingMobileNumber', 'Sibling mobile number', 0],
       ['instituteMobileNumber', 'Institute mobile number', 1],
       ['collegeMobileNumber', 'College mobile number', 1],
       ['referenceMobileNumber', 'Reference mobile number', 3]
@@ -872,6 +949,15 @@ export default function CandidateForm() {
         setActivePanel(panel)
         return false
       }
+    }
+
+    const invalidSiblingIndex = normalizeSiblingRows(form.siblings).findIndex(
+      (sibling) => sibling.siblingMobileNumber && sibling.siblingMobileNumber.length !== 10
+    )
+    if (invalidSiblingIndex >= 0) {
+      toast.error(`Sibling ${invalidSiblingIndex + 1} mobile number must be 10 digits`)
+      setActivePanel(0)
+      return false
     }
 
     return true
@@ -1008,7 +1094,7 @@ export default function CandidateForm() {
         </div>
 
         <div className="p-5">
-          {activePanel === 0 ? renderPersonalPanel(form, update, updateAddress, toggleSameAsCurrentAddress) : null}
+          {activePanel === 0 ? renderPersonalPanel(form, update, updateSiblings, updateAddress, toggleSameAsCurrentAddress) : null}
           {activePanel === 1 ? renderEducationPanel(form, update, updateAddress) : null}
           {activePanel === 2 ? renderProfessionalPanel(form, update) : null}
           {activePanel === 3 ? renderReferencePanel(form, update, toggleReferenceSource) : null}
@@ -1058,7 +1144,7 @@ export default function CandidateForm() {
   )
 }
 
-function renderPersonalPanel(form, update, updateAddress, toggleSameAsCurrentAddress) {
+function renderPersonalPanel(form, update, updateSiblings, updateAddress, toggleSameAsCurrentAddress) {
   return (
     <div className="space-y-6">
       <PanelHeader title="Personal Details" />
@@ -1126,6 +1212,7 @@ function renderPersonalPanel(form, update, updateAddress, toggleSameAsCurrentAdd
           )
         ))}
       </div>
+      <SiblingDetailsEditor siblings={form.siblings} onChange={updateSiblings} />
     </div>
   )
 }
@@ -1144,7 +1231,7 @@ function renderEducationPanel(form, update, updateAddress) {
         {form.educationSpecialization === 'Other' ? <TextField label="Special Subject / Remark" value={form.educationSpecializationOther} onChange={(value) => update('educationSpecializationOther', value)} /> : null}
       </div>
 
-      <PanelHeader title="Institute Reference Details" />
+      <PanelHeader title="College Reference Details (Like 12th, ITI, Diploma, Graduate)" />
       <div className="grid gap-4">
         {instituteReferenceFields.map((field) => (
           <TextField
@@ -1156,9 +1243,9 @@ function renderEducationPanel(form, update, updateAddress) {
           />
         ))}
       </div>
-      <AddressFields title="Institute Address" value={form.instituteAddress} onChange={(field, value) => updateAddress('instituteAddress', field, value)} />
+      <AddressFields title="College Address" value={form.instituteAddress} onChange={(field, value) => updateAddress('instituteAddress', field, value)} />
 
-      <PanelHeader title="Institute Details" />
+      <PanelHeader title="Institute Details (Private Coaching Classes)" />
       <div className="grid gap-4">
         {instituteCollegeFields.map((field) => (
           <TextField
@@ -1199,7 +1286,11 @@ function renderProfessionalPanel(form, update) {
       <PanelHeader title="Expected Salary Per Month" />
       <div className="grid gap-4">
         {expectedSalaryFields.map((field) => (
-          <TextField key={field.name} label={field.label} value={form[field.name]} inputMode={field.inputMode} onChange={(value) => update(field.name, value)} />
+          field.options ? (
+            <SelectField key={field.name} label={field.label} value={form[field.name]} options={field.options} onChange={(value) => update(field.name, value)} />
+          ) : (
+            <TextField key={field.name} label={field.label} value={form[field.name]} inputMode={field.inputMode} onChange={(value) => update(field.name, value)} />
+          )
         ))}
       </div>
 
@@ -1224,7 +1315,18 @@ function renderProfessionalPanel(form, update) {
         {form.noticePeriod === 'Other' ? <TextField label="Other Notice Period" value={form.noticePeriodOther} placeholder="Enter in days or month" onChange={(value) => update('noticePeriodOther', value)} /> : null}
         <TextField label="Available From" value={form.availabilityInterviewStartDate} type="date" onChange={(value) => update('availabilityInterviewStartDate', value)} />
         <TextField label="Available To" value={form.availabilityInterviewEndDate} type="date" onChange={(value) => update('availabilityInterviewEndDate', value)} />
-        <SelectField label="Interview Mode" value={form.interviewMode} options={interviewModeOptions} onChange={(value) => update('interviewMode', value)} />
+        <SelectField
+          label="Interview Mode"
+          value={form.interviewMode}
+          options={interviewModeOptions}
+          onChange={(value) => {
+            update('interviewMode', value)
+            if (value !== 'Online') update('onlineInterviewMode', '')
+          }}
+        />
+        {form.interviewMode === 'Online' ? (
+          <SelectField label="Online Interview Mode" value={form.onlineInterviewMode} options={['', 'Audio', 'Video']} onChange={(value) => update('onlineInterviewMode', value)} />
+        ) : null}
         <SelectField label="Reason For Job Change" value={form.reasonForJobChange} options={reasonForJobChangeOptions} onChange={(value) => update('reasonForJobChange', value)} />
         {form.reasonForJobChange === 'Any Other' ? <TextField label="Other Reason" value={form.reasonForJobChangeOther} onChange={(value) => update('reasonForJobChangeOther', value)} /> : null}
       </div>
@@ -1247,6 +1349,16 @@ function renderReferencePanel(form, update, toggleReferenceSource) {
         <TextField label="Reference Mobile Number" value={form.referenceMobileNumber} inputMode="numeric" onChange={(value) => update('referenceMobileNumber', digitsOnly(value).slice(0, 10))} />
         <SelectField label="Reference Profile" value={form.referenceProfile} options={referenceProfileOptions} onChange={(value) => update('referenceProfile', value)} />
         {form.referenceProfile === 'Other' ? <TextField label="Other Reference Profile" value={form.referenceProfileOther} onChange={(value) => update('referenceProfileOther', value)} /> : null}
+        <SelectField
+          label="Reference Relation"
+          value={form.referenceRelation}
+          options={referenceRelationOptions}
+          onChange={(value) => {
+            update('referenceRelation', value)
+            if (value !== 'Other') update('referenceRelationOther', '')
+          }}
+        />
+        {form.referenceRelation === 'Other' ? <TextField label="Other Reference Relation" value={form.referenceRelationOther} onChange={(value) => update('referenceRelationOther', value)} /> : null}
         <TextField label="Business Advisor Code" value={form.advisorCode} onChange={(value) => update('advisorCode', value)} />
       </div>
 
@@ -1275,6 +1387,108 @@ function renderReferencePanel(form, update, toggleReferenceSource) {
 
 function PanelHeader({ title }) {
   return <h2 className="border-b border-slate-200 pb-2 text-base font-bold text-slate-950">{title}</h2>
+}
+
+function SiblingDetailsEditor({ siblings, onChange }) {
+  const rows = normalizeSiblingRows(siblings)
+
+  const updateSibling = (index, field, value) => {
+    const nextRows = rows.map((row, rowIndex) => (rowIndex === index ? { ...row } : row))
+    const nextSibling = {
+      ...nextRows[index],
+      [field.name]: normalizeFieldValue(field, value)
+    }
+
+    if (field.name === 'siblingDateOfBirth') {
+      nextSibling.siblingAge = calculateAgeFromDate(value)
+    }
+
+    if (field.name === 'siblingCareerProfile') {
+      if (value !== 'Studying') {
+        nextSibling.siblingStudyStandard = ''
+        nextSibling.siblingStudyStandardOther = ''
+      }
+      if (value !== 'Other') {
+        nextSibling.siblingCareerProfileOther = ''
+      }
+    }
+
+    if (field.name === 'siblingStudyStandard' && value !== 'Other') {
+      nextSibling.siblingStudyStandardOther = ''
+    }
+
+    nextRows[index] = nextSibling
+    onChange(nextRows)
+  }
+
+  const addSibling = () => onChange([...rows, makeEmptySibling()])
+  const removeSibling = (index) => {
+    const nextRows = rows.filter((_, rowIndex) => rowIndex !== index)
+    onChange(nextRows.length ? nextRows : [makeEmptySibling()])
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-slate-900">Sibling Details</h3>
+          <p className="mt-1 text-xs font-semibold text-slate-500">Add each sibling separately.</p>
+        </div>
+        <button
+          type="button"
+          onClick={addSibling}
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 text-xs font-bold text-white hover:bg-sky-700 sm:w-auto"
+        >
+          <Plus className="h-4 w-4" />
+          Add Sibling
+        </button>
+      </div>
+
+      {rows.map((sibling, siblingIndex) => (
+        <div key={siblingIndex} className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h4 className="text-sm font-bold text-slate-700">Sibling {siblingIndex + 1}</h4>
+            {rows.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => removeSibling(siblingIndex)}
+                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-rose-200 px-3 text-xs font-bold text-rose-600 hover:bg-rose-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remove
+              </button>
+            ) : null}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {siblingFields
+              .filter((field) => !field.showWhen || sibling[field.showWhen.name] === field.showWhen.value)
+              .map((field) => (
+                field.options ? (
+                  <SelectField
+                    key={field.name}
+                    label={field.label}
+                    value={sibling[field.name]}
+                    options={field.options}
+                    onChange={(value) => updateSibling(siblingIndex, field, value)}
+                  />
+                ) : (
+                  <TextField
+                    key={field.name}
+                    label={field.label}
+                    value={sibling[field.name]}
+                    type={field.type}
+                    inputMode={field.inputMode}
+                    readOnly={field.readOnly}
+                    max={field.type === 'date' ? dateInputToday() : undefined}
+                    onChange={(value) => updateSibling(siblingIndex, field, value)}
+                  />
+                )
+              ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function TextField({ label, value, onChange, type = 'text', inputMode, required = false, readOnly = false, max, placeholder }) {
@@ -1333,12 +1547,14 @@ function SelectField({ label, value, options, onChange }) {
 }
 
 function AddressFields({ title, value, onChange }) {
+  const labelPrefix = title === 'College Address' ? 'College ' : ''
+
   return (
     <div className="rounded-lg border border-slate-200 p-4">
       <h3 className="text-sm font-bold text-slate-900">{title}</h3>
       <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {addressPartFields.map((field) => (
-          <TextField key={field.name} label={field.label} value={value?.[field.name] || ''} onChange={(nextValue) => onChange(field.name, nextValue)} />
+          <TextField key={field.name} label={`${labelPrefix}${field.label}`} value={value?.[field.name] || ''} onChange={(nextValue) => onChange(field.name, nextValue)} />
         ))}
       </div>
     </div>

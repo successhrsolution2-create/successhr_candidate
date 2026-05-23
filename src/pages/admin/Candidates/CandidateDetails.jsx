@@ -72,6 +72,26 @@ const processRemarkSections = [
 const emptyInterviewForm = { companyName: '', reference: '', interviewDate: '', remark: '', result: 'Pending' }
 
 const dateValue = (value) => (value ? String(value).slice(0, 10) : '')
+const siblingHasValue = (sibling = {}) =>
+  Object.values(sibling).some((value) => String(value ?? '').trim())
+const siblingRows = (familyDetails = {}) => {
+  const rows = Array.isArray(familyDetails.siblings) && familyDetails.siblings.length
+    ? familyDetails.siblings
+    : [{
+        siblingName: familyDetails.siblingName,
+        siblingEducation: familyDetails.siblingEducation || familyDetails.siblingEducationOccupation,
+        siblingMobileNumber: familyDetails.siblingMobileNumber,
+        siblingDateOfBirth: familyDetails.siblingDateOfBirth,
+        siblingAge: familyDetails.siblingAge,
+        siblingGender: familyDetails.siblingGender,
+        siblingCareerProfile: familyDetails.siblingCareerProfile,
+        siblingStudyStandard: familyDetails.siblingStudyStandard,
+        siblingStudyStandardOther: familyDetails.siblingStudyStandardOther,
+        siblingCareerProfileOther: familyDetails.siblingCareerProfileOther
+      }]
+
+  return rows.filter(siblingHasValue)
+}
 
 const formatUpdatedAt = (value) => {
   if (!value) return ''
@@ -580,7 +600,8 @@ const formatSalary = (value, expected = false) => {
   return [
     value.netInHand ? `${expected ? 'Expected ' : ''}NET / In-hand Salary: ${value.netInHand}` : '',
     value.grossPerMonth ? `${expected ? 'Expected ' : ''}Gross Per Month: ${value.grossPerMonth}` : '',
-    value.ctcPerMonth ? `${expected ? 'Expected ' : ''}CTC Per Month: ${value.ctcPerMonth}` : ''
+    value.ctcPerMonth ? `${expected ? 'Expected ' : ''}CTC Per Month: ${value.ctcPerMonth}` : '',
+    value.negotiable ? 'Expected Salary Negotiable: ' + value.negotiable : ''
   ].filter(Boolean).join('\n')
 }
 
@@ -640,23 +661,32 @@ function CandidateApplicationInfo({ candidate }) {
         title="Family Details"
         items={[
           { label: 'Father / Husband Name', value: family.fatherOrHusbandName },
-          { label: 'Father Occupation', value: family.fatherOccupation },
-          { label: 'Father Mobile Number', value: family.fatherMobileNumber },
+          { label: 'Father / Husband Occupation', value: family.fatherOccupation },
+          { label: 'Father / Husband Mobile Number', value: family.fatherMobileNumber },
           { label: 'Mother / Wife Name', value: family.motherOrWifeName },
-          { label: 'Mother Occupation', value: family.motherOccupation },
-          { label: 'Mother Mobile Number', value: family.motherMobileNumber },
-          { label: 'Sibling Name', value: family.siblingName },
-          { label: 'Sibling Education', value: family.siblingEducation || family.siblingEducationOccupation },
-          { label: 'Sibling Mobile Number', value: family.siblingMobileNumber },
-          { label: 'Sibling DOB', value: dateValue(family.siblingDateOfBirth) },
-          { label: 'Sibling Age', value: family.siblingAge },
-          { label: 'Sibling Gender', value: family.siblingGender },
-          { label: 'Sibling Career Profile', value: family.siblingCareerProfile },
-          { label: 'Sibling Study Standard', value: family.siblingStudyStandard },
-          { label: 'Other Study Standard', value: family.siblingStudyStandardOther },
-          { label: 'Other Career Profile', value: family.siblingCareerProfileOther }
+          { label: 'Mother / Wife Occupation', value: family.motherOccupation },
+          { label: 'Mother / Wife Mobile Number', value: family.motherMobileNumber }
         ]}
       />
+
+      {siblingRows(family).map((sibling, index) => (
+        <InfoSection
+          key={`sibling-${index}`}
+          title={`Sibling ${index + 1}`}
+          items={[
+            { label: 'Sibling / Brother / Sister Name', value: sibling.siblingName },
+            { label: 'Sibling / Brother / Sister Education', value: sibling.siblingEducation || sibling.siblingEducationOccupation },
+            { label: 'Sibling / Brother / Sister Mobile Number', value: sibling.siblingMobileNumber },
+            { label: 'Sibling / Brother / Sister DOB', value: dateValue(sibling.siblingDateOfBirth) },
+            { label: 'Sibling / Brother / Sister Age', value: sibling.siblingAge },
+            { label: 'Sibling / Brother / Sister Gender', value: sibling.siblingGender },
+            { label: 'Sibling / Brother / Sister Career Profile', value: sibling.siblingCareerProfile },
+            { label: 'Sibling / Brother / Sister Study Standard', value: sibling.siblingStudyStandard },
+            { label: 'Other Sibling / Brother / Sister Study Standard', value: sibling.siblingStudyStandardOther },
+            { label: 'Other Sibling / Brother / Sister Career Profile', value: sibling.siblingCareerProfileOther }
+          ]}
+        />
+      ))}
 
       <InfoSection
         title="Education Details"
@@ -667,11 +697,11 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Education Specialization', value: education.specialization || candidate.specialization },
           { label: 'Computer Course', value: selected('', education.computerCourse, education.computerCourseOther) },
           { label: 'Other Certification Course', value: selected('', education.certificationCourse, education.certificationCourseOther) || candidate.computerCourses },
-          { label: 'Institute Name', value: instituteReference.instituteName || candidate.collegeName },
-          { label: 'Institute Representative Name', value: instituteReference.representativeName || candidate.placementReference?.professorName },
+          { label: 'College Name', value: instituteReference.instituteName || candidate.collegeName },
+          { label: 'College Representative Name', value: instituteReference.representativeName || candidate.placementReference?.professorName },
           { label: 'Institute Representative Designation', value: instituteReference.designation },
-          { label: 'Institute Mobile Number', value: instituteReference.mobileNumber || candidate.placementReference?.professorContactNumber },
-          { label: 'Institute Address', value: formatAddress(instituteReference.address) },
+          { label: 'College Mobile Number', value: instituteReference.mobileNumber || candidate.placementReference?.professorContactNumber },
+          { label: 'College Address', value: formatAddress(instituteReference.address) },
           { label: 'Teacher', value: instituteCollege.teacherName },
           { label: 'Teacher Designation', value: instituteCollege.designation },
           { label: 'Teacher Mobile Number', value: instituteCollege.mobileNumber },
@@ -699,6 +729,7 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Notice Period', value: professional.noticePeriod || candidate.noticePeriod },
           { label: 'Availability for Interview', value: professional.availabilityForInterview || candidate.availabilityForInterview },
           { label: 'Interview Mode', value: professional.interviewMode || candidate.interviewMode },
+          { label: 'Online Interview Mode', value: professional.onlineInterviewMode },
           { label: 'Reason For Job Change', value: professional.reasonForJobChange || candidate.reasonForJobChange },
           { label: 'Key Skills You Have', value: professional.keySkillsKnowledge || (candidate.keySkills || []).join(', ') },
           { label: 'Key Job Responsibility As Per Your Experience', value: professional.careerJobResponsibilities || candidate.keyResponsibilities }
@@ -712,6 +743,7 @@ function CandidateApplicationInfo({ candidate }) {
           { label: 'Reference Name', value: referenceSuccess.referenceName || candidate.placementReference?.referenceBy || candidate.referenceName },
           { label: 'Reference Mobile Number', value: referenceSuccess.referenceMobileNumber || candidate.placementReference?.referenceContactNumber },
           { label: 'Reference Profile', value: referenceSuccess.referenceProfile },
+          { label: 'Reference Relation', value: referenceSuccess.referenceRelation },
           { label: 'Reference Source', value: referenceSuccess.referenceSources || [] },
           { label: 'Other Reference Source', value: referenceSuccess.referenceSourceOther }
         ]}
