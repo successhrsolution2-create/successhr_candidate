@@ -12,7 +12,7 @@ const schema = z.object({
   password: z.string().min(1, 'Password is required')
 })
 
-const cmsRoles = ['superAdmin', 'candidateAdmin', 'cmsAdmin']
+const cmsRoles = ['superAdmin', 'candidateAdmin']
 const routeFor = (role) => (cmsRoles.includes(role) ? '/admin/cms/candidates' : null)
 
 export default function Login() {

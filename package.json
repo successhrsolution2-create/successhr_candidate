@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "build:aws": "vite build && node ../tools/aws/prerender-spa-routes.js dist && node ../tools/aws/compress-dist.js dist",
     "preview": "vite preview"
   },
   "dependencies": {
