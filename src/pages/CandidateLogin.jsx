@@ -414,7 +414,7 @@ export default function CandidateLogin() {
         <aside className="ca-hero" aria-hidden="true">
           <div className="ca-hero-inner">
             <div className="ca-logo-wrap">
-              <img src="/success-logo.svg" alt="Success HR Solutions" className="ca-logo" />
+              <img src="/success-logo.jpg" alt="Success HR Solutions" className="ca-logo" />
             </div>
 
             <div className="ca-hero-tagline">

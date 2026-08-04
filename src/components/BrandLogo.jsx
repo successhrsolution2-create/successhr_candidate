@@ -9,5 +9,5 @@ export default function BrandLogo({ className = '', compact = false }) {
     )
   }
 
-  return <img src="/success-logo.svg" alt="Success HR Solutions" className={`block h-auto w-full object-contain ${className}`} />
+  return <img src="/success-logo.jpg" alt="Success HR Solutions" className={`block h-auto w-full object-contain ${className}`} />
 }
