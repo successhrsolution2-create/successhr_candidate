@@ -146,7 +146,7 @@ function LoginPanel({ urlCode }) {
 }
 
 /* ══════════════════════════════════════
-   SIGN UP PANEL
+   REGISTER PANEL
 ══════════════════════════════════════ */
 function SignUpPanel({ urlCode, onSuccess, onGoToLogin }) {
   const navigate = useNavigate()
@@ -452,7 +452,7 @@ export default function CandidateLogin() {
         {/* ── Right panel ── */}
         <section className="ca-form-panel">
           {/* ── Tab switcher ── */}
-          <div className="ca-tabs" role="tablist" aria-label="Login or Sign Up">
+          <div className="ca-tabs" role="tablist" aria-label="Login or Register">
             <button
               role="tab"
               id="tab-login"
@@ -473,7 +473,7 @@ export default function CandidateLogin() {
               onClick={() => setTab('signup')}
             >
               <UserPlus size={15} />
-              Sign Up
+              Register
             </button>
           </div>
 
@@ -484,7 +484,7 @@ export default function CandidateLogin() {
             </div>
             <div>
               <h2 className="ca-form-title">
-                {tab === 'login' ? 'Login' : 'Sign Up'}
+                {tab === 'login' ? 'Login' : 'Register'}
               </h2>
               <p className="ca-form-subtitle">
                 {tab === 'login' ? 'Enter your credentials to continue' : 'Register to begin your application'}

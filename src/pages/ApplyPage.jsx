@@ -945,7 +945,12 @@ export default function ApplyPage() {
 
     const storedSession = readStoredCandidateSession()
     const token = storedSession?.candidateToken
+
     if (token) {
+      // Logged-in candidate: ALWAYS load from server, never from local IndexedDB draft
+      // Also clear any stale draft so other candidates don't see it
+      clearStoredApplyDraft()
+
       api.get('/public/candidate/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -956,18 +961,47 @@ export default function ApplyPage() {
           setCandidateSession(nextSession)
           setCandidateEntryMode('update')
           setCandidateExistingDocuments(data.candidate?.documents || [])
-          applySavedPublicState(data.candidate?.publicApplyState || {})
+          const publicState = data.candidate?.publicApplyState || {}
+          // If publicApplyState has form data from a previous submission, use it.
+          // Otherwise pre-fill the form from admin-entered CMS fields.
+          if (publicState.form) {
+            applySavedPublicState(publicState)
+          } else {
+            const c = data.candidate || {}
+            setForm((prev) => ({
+              ...prev,
+              candidateName: c.fullName || prev.candidateName,
+              mobileNumber: c.mobileNumber || prev.mobileNumber,
+              whatsappNo: c.whatsappNo || prev.whatsappNo,
+              emailId: c.emailId || prev.emailId,
+              gender: c.gender || prev.gender,
+              currentAge: c.currentAge || prev.currentAge,
+              marriageStatus: c.marriageStatus || prev.marriageStatus,
+              aadhaarNo: c.aadhaarNo || prev.aadhaarNo,
+              panNo: c.panNo || prev.panNo,
+              dateOfBirth: c.dateOfBirth || prev.dateOfBirth,
+              currentAddress: c.currentAddress || prev.currentAddress,
+              permanentAddress: c.permanentAddress || prev.permanentAddress
+            }))
+          }
           clearStoredSubmission()
           setDone(null)
           setDraftLoaded(true)
         })
         .catch(() => {
           clearStoredCandidateSession()
+          clearStoredApplyDraft()
           if (active) {
             setCandidateSession(null)
             setCandidateEntryMode('')
+            setDraftLoaded(true)
           }
         })
+
+      // Do NOT load local draft for logged-in candidates
+      return () => {
+        active = false
+      }
     }
 
     if (done) {
@@ -1001,7 +1035,9 @@ export default function ApplyPage() {
   }, [])
 
   useEffect(() => {
-    if (!draftLoaded || done) return undefined
+    // Only auto-save to local draft when the candidate is NOT logged in.
+    // Logged-in candidates use the server as the source of truth.
+    if (!draftLoaded || done || candidateEntryMode === 'update') return undefined
 
     const timeoutId = window.setTimeout(() => {
       saveStoredApplyDraft({
@@ -1021,6 +1057,7 @@ export default function ApplyPage() {
     return () => window.clearTimeout(timeoutId)
   }, [
     advisorCode,
+    candidateEntryMode,
     collegeAddressParts,
     currentAddressParts,
     currentStep,
@@ -1456,7 +1493,27 @@ export default function ApplyPage() {
       setCandidateSession(nextSession)
       setCandidateEntryMode('update')
       setCandidateExistingDocuments(data.candidate?.documents || [])
-      applySavedPublicState(data.candidate?.publicApplyState || {})
+      const publicState = data.candidate?.publicApplyState || {}
+      if (publicState.form) {
+        applySavedPublicState(publicState)
+      } else {
+        const c = data.candidate || {}
+        setForm((prev) => ({
+          ...prev,
+          candidateName: c.fullName || prev.candidateName,
+          mobileNumber: c.mobileNumber || prev.mobileNumber,
+          whatsappNo: c.whatsappNo || prev.whatsappNo,
+          emailId: c.emailId || prev.emailId,
+          gender: c.gender || prev.gender,
+          currentAge: c.currentAge || prev.currentAge,
+          marriageStatus: c.marriageStatus || prev.marriageStatus,
+          aadhaarNo: c.aadhaarNo || prev.aadhaarNo,
+          panNo: c.panNo || prev.panNo,
+          dateOfBirth: c.dateOfBirth || prev.dateOfBirth,
+          currentAddress: c.currentAddress || prev.currentAddress,
+          permanentAddress: c.permanentAddress || prev.permanentAddress
+        }))
+      }
       clearStoredSubmission()
       clearStoredApplyDraft()
       setDone(null)
