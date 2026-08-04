@@ -644,3 +644,100 @@ select {
   color: #64748b;
   margin-top: 4px;
 }
+
+/* ── Animated success rings ── */
+.ca-success-rings {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px auto;
+}
+.ca-success-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid #10b981;
+  animation: ca-ring-pulse 2s ease-out infinite;
+}
+.ca-success-ring-1 { width: 80px;  height: 80px;  animation-delay: 0s;    opacity: 0.2; }
+.ca-success-ring-2 { width: 64px;  height: 64px;  animation-delay: 0.3s;  opacity: 0.35; }
+.ca-success-ring-3 { width: 50px;  height: 50px;  animation-delay: 0.6s;  opacity: 0.5; }
+@keyframes ca-ring-pulse {
+  0%   { transform: scale(0.85); opacity: 0; }
+  40%  { opacity: 1; }
+  100% { transform: scale(1.2);  opacity: 0; }
+}
+.ca-success-check {
+  position: relative;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+  animation: ca-check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes ca-check-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* ── Candidate ID card ── */
+.ca-success-id-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #eaf5fc 0%, #f0f9ff 100%);
+  border: 1.5px solid #bae6fd;
+  border-radius: 14px;
+  padding: 16px 24px;
+  width: 100%;
+  animation: ca-fade-in 0.5s ease 0.3s both;
+}
+.ca-success-id-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0b65ac;
+}
+.ca-signup-code-lg {
+  font-family: 'Courier New', monospace;
+  font-size: 22px !important;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #053c78;
+  background: #dbeafe !important;
+  padding: 4px 16px !important;
+  border-radius: 8px !important;
+}
+.ca-success-id-note {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+/* ── Go to Login button after signup ── */
+.ca-success-login-btn {
+  background: linear-gradient(135deg, #053c78 0%, #0b65ac 100%) !important;
+  width: 100%;
+  animation: ca-fade-in 0.5s ease 0.5s both;
+}
+
+/* ── Input hint (mobile vs ID detection) ── */
+.ca-input-hint {
+  font-size: 11.5px;
+  color: #0b65ac;
+  font-weight: 500;
+  margin-top: 2px;
+  padding-left: 2px;
+  animation: ca-fade-in 0.2s ease;
+}

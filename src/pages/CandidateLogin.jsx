@@ -37,27 +37,31 @@ function LoginPanel({ urlCode }) {
   const navigate = useNavigate()
   const { loading, error } = useSelector((s) => s.candidateAuth)
 
-  const [candidateCode, setCandidateCode] = useState(urlCode || '')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [touched, setTouched] = useState({ candidateCode: false, password: false })
+  const [touched, setTouched] = useState({ identifier: false, password: false })
 
-  const codeRef = useRef(null)
-  useEffect(() => { setTimeout(() => codeRef.current?.focus(), 150) }, [])
+  const inputRef = useRef(null)
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 150) }, [])
+
+  // Smart detection: 10-digit number = mobile, else = candidateCode
+  const isMobile = /^\d{10}$/.test(identifier.trim())
 
   const errors = {}
-  if (!candidateCode.trim()) errors.candidateCode = 'Candidate ID is required'
+  if (!identifier.trim()) errors.identifier = 'Mobile number or Candidate ID is required'
   if (!password) errors.password = 'Password is required'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setTouched({ candidateCode: true, password: true })
+    setTouched({ identifier: true, password: true })
     if (Object.keys(errors).length) return
 
-    const result = await dispatch(loginCandidatePortal({
-      candidateCode: candidateCode.trim().toUpperCase(),
-      password
-    }))
+    const credentials = isMobile
+      ? { mobileNumber: identifier.trim(), password }
+      : { candidateCode: identifier.trim().toUpperCase(), password }
+
+    const result = await dispatch(loginCandidatePortal(credentials))
 
     if (loginCandidatePortal.fulfilled.match(result)) {
       const dest = urlCode ? `/apply/${urlCode}` : '/apply'
@@ -67,28 +71,34 @@ function LoginPanel({ urlCode }) {
 
   return (
     <form id="candidate-login-form" onSubmit={handleSubmit} noValidate className="ca-form">
-      {/* Candidate ID */}
+      {/* Mobile / Candidate ID */}
       <div className="ca-field-wrap">
-        <label htmlFor="candidateCode" className="ca-label">
-          <UserRound size={14} className="ca-label-icon" />
-          Candidate ID
+        <label htmlFor="ca-identifier" className="ca-label">
+          <Phone size={14} className="ca-label-icon" />
+          Mobile Number or Candidate ID
         </label>
-        <div className={`ca-input-wrap ${touched.candidateCode && errors.candidateCode ? 'ca-input-error' : ''}`}>
+        <div className={`ca-input-wrap ${touched.identifier && errors.identifier ? 'ca-input-error' : ''}`}>
           <input
-            ref={codeRef}
-            id="candidateCode"
+            ref={inputRef}
+            id="ca-identifier"
             type="text"
+            inputMode="text"
             autoComplete="username"
-            placeholder="e.g. SC-1042"
-            value={candidateCode}
-            onChange={(e) => setCandidateCode(e.target.value.toUpperCase())}
-            onBlur={() => setTouched((t) => ({ ...t, candidateCode: true }))}
+            placeholder="e.g. 9876543210 or SC-1042"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, identifier: true }))}
             className="ca-input"
-            aria-describedby="candidateCode-error"
+            aria-describedby="identifier-error"
           />
         </div>
-        {touched.candidateCode && errors.candidateCode && (
-          <span id="candidateCode-error" className="ca-field-error" role="alert">{errors.candidateCode}</span>
+        {identifier.trim().length > 0 && (
+          <span className="ca-input-hint">
+            {isMobile ? '📱 Logging in with mobile number' : '🪪 Logging in with Candidate ID'}
+          </span>
+        )}
+        {touched.identifier && errors.identifier && (
+          <span id="identifier-error" className="ca-field-error" role="alert">{errors.identifier}</span>
         )}
       </div>
 
@@ -138,7 +148,7 @@ function LoginPanel({ urlCode }) {
 /* ══════════════════════════════════════
    SIGN UP PANEL
 ══════════════════════════════════════ */
-function SignUpPanel({ urlCode, onSuccess }) {
+function SignUpPanel({ urlCode, onSuccess, onGoToLogin }) {
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
@@ -192,7 +202,6 @@ function SignUpPanel({ urlCode, onSuccess }) {
 
       const { data } = await axios.post(endpoint, body, { withCredentials: true })
 
-      // Save to localStorage so candidateAuthSlice picks it up
       const candidateInfo = {
         id: data.cmsCandidateId || data.studentId,
         candidateCode: data.candidateCode,
@@ -202,12 +211,7 @@ function SignUpPanel({ urlCode, onSuccess }) {
       localStorage.setItem('candidate_portal_user', JSON.stringify(candidateInfo))
 
       setSuccess({ candidateCode: data.candidateCode })
-      onSuccess(candidateInfo)
-
-      setTimeout(() => {
-        const dest = urlCode ? `/apply/${urlCode}` : '/apply'
-        navigate(dest, { replace: true })
-      }, 2000)
+      // Do NOT auto-redirect — show success screen with Login button
     } catch (err) {
       setApiError(err.response?.data?.message || 'Registration failed. Please try again.')
     } finally {
@@ -218,16 +222,35 @@ function SignUpPanel({ urlCode, onSuccess }) {
   if (success) {
     return (
       <div className="ca-signup-success" role="status">
-        <div className="ca-signup-success-icon">✓</div>
-        <h3 className="ca-signup-success-title">Account Created!</h3>
-        <p className="ca-signup-success-sub">
-          Your Candidate ID is{' '}
-          <strong className="ca-signup-code">{success.candidateCode}</strong>
-        </p>
-        <p className="ca-signup-success-note">Please save your Candidate ID — you'll need it to log in next time.</p>
-        <div className="ca-signup-success-loader">
-          <Loader2 size={16} className="ca-spinner" /> Redirecting to your form…
+        {/* Animated rings */}
+        <div className="ca-success-rings" aria-hidden="true">
+          <div className="ca-success-ring ca-success-ring-1" />
+          <div className="ca-success-ring ca-success-ring-2" />
+          <div className="ca-success-ring ca-success-ring-3" />
+          <div className="ca-success-check">✓</div>
         </div>
+
+        <h3 className="ca-signup-success-title">🎉 Thank You for Registering!</h3>
+        <p className="ca-signup-success-sub">Welcome to Success HR Solutions. Your account is ready.</p>
+
+        {/* Candidate ID badge */}
+        <div className="ca-success-id-card">
+          <span className="ca-success-id-label">Your Candidate ID</span>
+          <span className="ca-signup-code ca-signup-code-lg">{success.candidateCode}</span>
+          <span className="ca-success-id-note">📋 Save this ID — you'll use it to log in</span>
+        </div>
+
+        <p className="ca-signup-success-note">You can also log in using your registered mobile number and password.</p>
+
+        {/* Login button — no auto-redirect */}
+        <button
+          type="button"
+          id="goto-login-after-signup"
+          className="ca-submit-btn ca-success-login-btn"
+          onClick={() => onGoToLogin()}
+        >
+          <LogIn size={18} /> Go to Login
+        </button>
       </div>
     )
   }
@@ -486,7 +509,7 @@ export default function CandidateLogin() {
             aria-labelledby="tab-signup"
             hidden={tab !== 'signup'}
           >
-            {tab === 'signup' && <SignUpPanel urlCode={urlCode} onSuccess={handleSignupSuccess} />}
+            {tab === 'signup' && <SignUpPanel urlCode={urlCode} onSuccess={handleSignupSuccess} onGoToLogin={() => setTab('login')} />}
           </div>
 
           <p className="ca-help-text">
