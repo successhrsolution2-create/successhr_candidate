@@ -34,9 +34,15 @@ export const fetchCandidateSession = createAsyncThunk(
   'candidateAuth/fetchMe',
   async (_, { rejectWithValue }) => {
     try {
+      const session = readCandidateUser()
+      const headers = {}
+      if (session?.candidateToken) {
+        headers.Authorization = `Bearer ${session.candidateToken}`
+      }
+
       const { data } = await axios.get(
         `${API_ROOT}/api/public/candidate/me`,
-        { withCredentials: true }
+        { headers, withCredentials: true }
       )
       return data
     } catch (error) {
@@ -70,7 +76,7 @@ const candidateAuthSlice = createSlice({
     setFromSignup(state, action) {
       state.authenticated = true
       state.checking = false
-      state.candidate = action.payload
+      state.candidate = action.payload.candidate || action.payload
       localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(action.payload))
     }
   },
@@ -85,7 +91,13 @@ const candidateAuthSlice = createSlice({
         state.authenticated = true
         state.checking = false
         state.candidate = action.payload.candidate || action.payload
-        localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(state.candidate))
+        
+        // Ensure token is saved along with candidate info if present
+        const payloadToSave = { ...state.candidate }
+        if (action.payload.candidateToken) {
+          payloadToSave.candidateToken = action.payload.candidateToken
+        }
+        localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(payloadToSave))
       })
       .addCase(loginCandidatePortal.rejected, (state, action) => {
         state.loading = false
@@ -99,7 +111,13 @@ const candidateAuthSlice = createSlice({
         state.checking = false
         state.authenticated = true
         state.candidate = action.payload.candidate || action.payload
-        localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(state.candidate))
+        
+        const existingSession = readCandidateUser() || {}
+        const payloadToSave = { ...state.candidate }
+        if (existingSession.candidateToken) {
+          payloadToSave.candidateToken = existingSession.candidateToken
+        }
+        localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(payloadToSave))
       })
       .addCase(fetchCandidateSession.rejected, (state) => {
         state.checking = false
