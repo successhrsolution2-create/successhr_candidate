@@ -1728,15 +1728,15 @@ export default function ApplyPage() {
         })
       })
 
-      const requestConfig = candidateSession?.candidateToken
-        ? { headers: { Authorization: `Bearer ${candidateSession.candidateToken}` } }
+      const requestConfig = reduxCandidate?.candidateToken
+        ? { headers: { Authorization: `Bearer ${reduxCandidate.candidateToken}` } }
         : undefined
-      const { data } = candidateSession?.candidateToken
+      const { data } = reduxCandidate?.candidateToken
         ? await api.put('/public/candidate/apply', payload, requestConfig)
         : await api.post('/public/apply', payload)
       if (data.candidateToken || data.candidate) {
         const nextSession = {
-          candidateToken: data.candidateToken || candidateSession?.candidateToken,
+          candidateToken: data.candidateToken || reduxCandidate?.candidateToken,
           candidate: data.candidate || {
             candidateCode: data.candidateCode || '',
             fullName: form.candidateName.trim(),
@@ -1751,7 +1751,7 @@ export default function ApplyPage() {
         name: form.candidateName.trim(),
         mode: data.mode || (advisorCode.trim() ? 'advisor' : 'walkin'),
         candidateCode: data.candidateCode || '',
-        updated: Boolean(candidateSession?.candidateToken),
+        updated: Boolean(reduxCandidate?.candidateToken),
         submittedAt: new Date().toISOString()
       }
       clearStoredApplyDraft()
@@ -1783,13 +1783,13 @@ export default function ApplyPage() {
           </p>
           {done.candidateCode ? <p className="mt-2 text-sm font-semibold text-sky-700">Your Candidate ID: {done.candidateCode}</p> : null}
           <p className="mt-2 text-xs font-semibold text-slate-500">Use this Candidate ID and your password to update the form later.</p>
-          {candidateSession?.candidateToken ? (
+          {reduxCandidate?.candidateToken ? (
             <button
               type="button"
               onClick={() => {
                 clearStoredSubmission()
                 setDone(null)
-                applySavedPublicState(candidateSession.candidate?.publicApplyState || currentPublicApplyState())
+                applySavedPublicState(reduxCandidate.candidate?.publicApplyState || currentPublicApplyState())
                 setCurrentStep(0)
               }}
               className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
@@ -2087,7 +2087,7 @@ export default function ApplyPage() {
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70 sm:min-w-52"
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  {submitting ? 'Saving...' : candidateSession?.candidateToken ? 'Update Application' : 'Submit Application'}
+                  {submitting ? 'Saving...' : 'Submit Application'}
                 </button>
               ) : (
                 <button
