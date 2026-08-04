@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { logoutCandidate as logoutCandidateRedux } from '../store/candidateAuthSlice'
 import toast from 'react-hot-toast'
 import {
   AlertTriangle,
@@ -850,6 +852,8 @@ const clearStoredCandidateSession = () => {
 
 export default function ApplyPage() {
   const { code } = useParams()
+  const dispatch = useDispatch()
+  const reduxCandidate = useSelector((state) => state.candidateAuth.candidate)
   const submitRequestedRef = useRef(false)
   const [advisorCode, setAdvisorCode] = useState(String(code || '').toLowerCase())
   const [currentStep, setCurrentStep] = useState(0)
@@ -862,7 +866,25 @@ export default function ApplyPage() {
   const [sameAsCurrentAddress, setSameAsCurrentAddress] = useState(false)
   const [documents, setDocuments] = useState({})
   const [documentIssues, setDocumentIssues] = useState({})
-  const [candidateSession, setCandidateSession] = useState(() => readStoredCandidateSession())
+  const [candidateSession, setCandidateSession] = useState(() => {
+    const stored = readStoredCandidateSession()
+    // If not found in ApplyPage's old format, try reading from Redux format
+    if (!stored) {
+      const globalSessionStr = typeof window !== 'undefined' ? window.localStorage.getItem('candidate_portal_user') : null
+      if (globalSessionStr) {
+        try {
+          const globalSession = JSON.parse(globalSessionStr)
+          if (globalSession) {
+            return {
+              candidateToken: globalSession.candidateToken,
+              candidate: { ...globalSession }
+            }
+          }
+        } catch (e) {}
+      }
+    }
+    return stored
+  })
   const [candidatePassword, setCandidatePassword] = useState('')
   const [candidatePasswordConfirm, setCandidatePasswordConfirm] = useState('')
   const [candidateLogin, setCandidateLogin] = useState({ candidateCode: '', password: '' })
@@ -1810,20 +1832,33 @@ export default function ApplyPage() {
   return (
     <PublicShell>
       <div className="mx-auto max-w-5xl space-y-3">
-        <CandidatePortalPanel
-          session={candidateSession}
-          entryMode={candidateEntryMode}
-          loginOpen={candidateLoginOpen}
-          setLoginOpen={setCandidateLoginOpen}
-          login={candidateLogin}
-          setLogin={setCandidateLogin}
-          loading={candidateLoginLoading}
-          onSignup={startCandidateSignup}
-          onLogin={loginCandidate}
-          onLogout={logoutCandidate}
-        />
+        {/* Minimal User Bar */}
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+              <UserRound className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900">
+                Welcome, {candidateSession?.candidate?.fullName || 'Candidate'}!
+              </p>
+              <p className="text-xs font-semibold text-slate-500">
+                ID: {candidateSession?.candidate?.candidateCode || 'Pending'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              logoutCandidate()
+              dispatch(logoutCandidateRedux())
+            }}
+            className="inline-flex min-h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50"
+          >
+            Log out
+          </button>
+        </div>
 
-      {candidateSession?.candidateToken || candidateEntryMode === 'signup' ? (
       <form onSubmit={submit} className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
         <WizardSidebar
           currentStep={currentStep}
@@ -2069,7 +2104,6 @@ export default function ApplyPage() {
           </div>
         </div>
       </form>
-      ) : null}
       </div>
     </PublicShell>
   )
@@ -2083,13 +2117,13 @@ function PublicShell({ children }) {
       <div className="mx-auto max-w-5xl">
         <header className="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm sm:mb-4">
           <div className="bg-gradient-to-r from-[#fffce3] via-[#f3faef] to-[#d9f4fb] px-3 py-3 sm:px-4">
-            <div className="grid gap-2 text-center sm:grid-cols-[140px_minmax(0,1fr)] sm:items-center sm:text-left">
-              <div className="flex justify-center sm:justify-start">
-                <img src="/success-logo.svg" alt="SUCCESS HR Solution" className="h-14 w-36 object-contain sm:h-16 sm:w-36 lg:w-40" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="shrink-0">
+                <img src="/success-logo.svg" alt="SUCCESS HR Solution" className="h-14 w-28 object-contain sm:h-16 sm:w-36 lg:w-40" />
               </div>
-              <div className="min-w-0">
-                <h1 className="text-lg font-black leading-tight text-sky-900 sm:text-2xl lg:text-3xl">SUCCESS HR SOLUTION&apos;S</h1>
-                <p className="mt-0.5 text-sm font-extrabold leading-tight text-slate-950 sm:text-base lg:text-lg">Your Success is Our Mission...!</p>
+              <div className="min-w-0 flex-1 text-left">
+                <h1 className="text-base font-black leading-tight text-sky-900 sm:text-2xl lg:text-3xl">SUCCESS HR SOLUTION&apos;S</h1>
+                <p className="mt-0.5 text-[13px] font-extrabold leading-tight text-slate-950 sm:text-base lg:text-lg">Your Success is Our Mission...!</p>
                 <p className="mt-0.5 break-words text-[11px] font-semibold text-slate-600 sm:text-xs">www.successhrsolutions.com</p>
               </div>
             </div>
