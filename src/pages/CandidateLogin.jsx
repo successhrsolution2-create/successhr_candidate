@@ -206,12 +206,19 @@ function SignUpPanel({ urlCode, onSuccess, onGoToLogin }) {
         id: data.cmsCandidateId || data.studentId,
         candidateCode: data.candidateCode,
         fullName: form.candidateName.trim(),
-        mobileNumber: form.mobileNumber.trim()
+        mobileNumber: form.mobileNumber.trim(),
+        candidateToken: data.candidateToken // Auto-login token
       }
       localStorage.setItem('candidate_portal_user', JSON.stringify(candidateInfo))
 
       setSuccess({ candidateCode: data.candidateCode })
-      // Do NOT auto-redirect — show success screen with Login button
+      onSuccess(candidateInfo)
+
+      // Auto-redirect to form after showing success animation
+      setTimeout(() => {
+        const dest = urlCode ? `/apply/${urlCode}` : '/apply'
+        navigate(dest, { replace: true })
+      }, 2500)
     } catch (err) {
       setApiError(err.response?.data?.message || 'Registration failed. Please try again.')
     } finally {
@@ -237,20 +244,12 @@ function SignUpPanel({ urlCode, onSuccess, onGoToLogin }) {
         <div className="ca-success-id-card">
           <span className="ca-success-id-label">Your Candidate ID</span>
           <span className="ca-signup-code ca-signup-code-lg">{success.candidateCode}</span>
-          <span className="ca-success-id-note">📋 Save this ID — you'll use it to log in</span>
+          <span className="ca-success-id-note">📋 Save this ID — you'll use it to log in next time</span>
         </div>
 
-        <p className="ca-signup-success-note">You can also log in using your registered mobile number and password.</p>
-
-        {/* Login button — no auto-redirect */}
-        <button
-          type="button"
-          id="goto-login-after-signup"
-          className="ca-submit-btn ca-success-login-btn"
-          onClick={() => onGoToLogin()}
-        >
-          <LogIn size={18} /> Go to Login
-        </button>
+        <div className="ca-signup-success-loader" style={{ marginTop: '16px' }}>
+          <Loader2 size={16} className="ca-spinner" /> Redirecting to your form…
+        </div>
       </div>
     )
   }
