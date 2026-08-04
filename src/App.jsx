@@ -3,10 +3,12 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import Sidebar from './components/Sidebar'
 import ProtectedRoute from './components/ProtectedRoute'
+import CandidateProtectedRoute from './components/CandidateProtectedRoute'
 import Skeleton from './components/Skeleton'
 import { fetchMe } from './store/authSlice'
 
 const Login = lazy(() => import('./pages/Login'))
+const CandidateLogin = lazy(() => import('./pages/CandidateLogin'))
 const ApplyPage = lazy(() => import('./pages/ApplyPage'))
 const CandidatesList = lazy(() => import('./pages/admin/Candidates/CandidatesList'))
 const CandidateForm = lazy(() => import('./pages/admin/Candidates/CandidateForm'))
@@ -39,10 +41,44 @@ export default function App() {
   return (
     <Suspense fallback={routeFallback}>
       <Routes>
-        <Route path="/" element={<ApplyPage />} />
-        <Route path="/:code" element={<ApplyPage />} />
-        <Route path="/apply" element={<ApplyPage />} />
-        <Route path="/apply/:code" element={<ApplyPage />} />
+        {/* ── Candidate portal: login required ── */}
+        <Route path="/candidate-login" element={<CandidateLogin />} />
+        <Route path="/candidate-login/:code" element={<CandidateLogin />} />
+
+        <Route
+          path="/"
+          element={
+            <CandidateProtectedRoute>
+              <ApplyPage />
+            </CandidateProtectedRoute>
+          }
+        />
+        <Route
+          path="/:code"
+          element={
+            <CandidateProtectedRoute>
+              <ApplyPage />
+            </CandidateProtectedRoute>
+          }
+        />
+        <Route
+          path="/apply"
+          element={
+            <CandidateProtectedRoute>
+              <ApplyPage />
+            </CandidateProtectedRoute>
+          }
+        />
+        <Route
+          path="/apply/:code"
+          element={
+            <CandidateProtectedRoute>
+              <ApplyPage />
+            </CandidateProtectedRoute>
+          }
+        />
+
+        {/* ── Admin panel ── */}
         <Route path="/login" element={<Login />} />
         <Route
           path="/admin/cms/candidates"
@@ -126,7 +162,7 @@ export default function App() {
         />
         <Route path="/admin/dashboard" element={<Navigate to="/admin/cms/candidates" replace />} />
         <Route path="/admin/candidates" element={<Navigate to="/admin/cms/candidates" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/candidate-login" replace />} />
       </Routes>
     </Suspense>
   )

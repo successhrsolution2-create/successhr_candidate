@@ -14,6 +14,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      if (error.config?.url?.includes('/public/')) {
+        return Promise.reject(error)
+      }
+
       if (!error.config?.url?.includes('/auth/logout')) {
         axios.post(`${API_ROOT}/api/auth/logout`, {}, { withCredentials: true }).catch(() => {})
       }

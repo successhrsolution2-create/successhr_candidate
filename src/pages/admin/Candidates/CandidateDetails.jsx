@@ -642,6 +642,8 @@ function CandidateApplicationInfo({ candidate }) {
       <InfoSection
         title="Personal Details"
         items={[
+          { label: 'Candidate ID', value: candidate.candidateCode },
+          { label: 'Candidate Login Password', value: candidate.candidatePortal?.password },
           { label: 'Full Name', value: personal.candidateName || candidate.fullName },
           { label: 'Mobile Number', value: personal.mobileNumber || candidate.mobileNumber },
           { label: 'WhatsApp', value: personal.whatsappNo || candidate.whatsappNo },

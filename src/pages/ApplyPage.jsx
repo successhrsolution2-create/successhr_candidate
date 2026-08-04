@@ -10,7 +10,9 @@ import {
   FileImage,
   GraduationCap,
   Handshake,
+  KeyRound,
   Loader2,
+  LogIn,
   Plus,
   Trash2,
   UploadCloud,
@@ -373,6 +375,24 @@ const requiredFields = ['candidateName', 'mobileNumber']
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
 const MAX_DOCUMENT_FILES_PER_TYPE = 10
+
+const formatFileSize = (bytes = 0) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB'
+  const mb = bytes / (1024 * 1024)
+  if (mb >= 1) return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`
+  return `${Math.ceil(bytes / 1024)} KB`
+}
+
+const readableFileTypes = (documentType) =>
+  documentType.typeMessage
+    ? documentType.typeMessage.replace(/^must be /i, '')
+    : 'a JPG, PNG, or PDF file'
+
+const countSelectedDocuments = (documents) =>
+  Object.values(documents || {}).reduce((count, files) => count + (files?.length || 0), 0)
+
+const documentIssueCount = (issues) =>
+  Object.values(issues || {}).reduce((count, items) => count + (items?.length || 0), 0)
 
 const createEmptyAddressParts = () => ({
   addressLine: '',
@@ -798,6 +818,36 @@ const clearStoredSubmission = () => {
   }
 }
 
+const CANDIDATE_SESSION_STORAGE_KEY = 'success-public-apply:candidate-session'
+
+const readStoredCandidateSession = () => {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = window.localStorage.getItem(CANDIDATE_SESSION_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch (_error) {
+    return null
+  }
+}
+
+const saveStoredCandidateSession = (session) => {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(CANDIDATE_SESSION_STORAGE_KEY, JSON.stringify(session))
+  } catch (_error) {
+    // Ignore storage failures; candidates can still log in manually.
+  }
+}
+
+const clearStoredCandidateSession = () => {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(CANDIDATE_SESSION_STORAGE_KEY)
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
 export default function ApplyPage() {
   const { code } = useParams()
   const submitRequestedRef = useRef(false)
@@ -811,6 +861,15 @@ export default function ApplyPage() {
   const [referenceSuccessSources, setReferenceSuccessSources] = useState([])
   const [sameAsCurrentAddress, setSameAsCurrentAddress] = useState(false)
   const [documents, setDocuments] = useState({})
+  const [documentIssues, setDocumentIssues] = useState({})
+  const [candidateSession, setCandidateSession] = useState(() => readStoredCandidateSession())
+  const [candidatePassword, setCandidatePassword] = useState('')
+  const [candidatePasswordConfirm, setCandidatePasswordConfirm] = useState('')
+  const [candidateLogin, setCandidateLogin] = useState({ candidateCode: '', password: '' })
+  const [candidateLoginOpen, setCandidateLoginOpen] = useState(false)
+  const [candidateLoginLoading, setCandidateLoginLoading] = useState(false)
+  const [candidateEntryMode, setCandidateEntryMode] = useState(() => (readStoredCandidateSession()?.candidateToken ? 'update' : ''))
+  const [candidateExistingDocuments, setCandidateExistingDocuments] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [done, setDone] = useState(() => readStoredSubmission())
@@ -827,12 +886,67 @@ export default function ApplyPage() {
   )
 
   const selectedDocumentCount = useMemo(
-    () => Object.values(documents).reduce((total, files) => total + (files?.length || 0), 0),
+    () => countSelectedDocuments(documents),
     [documents]
   )
+  const selectedDocumentIssueCount = useMemo(
+    () => documentIssueCount(documentIssues),
+    [documentIssues]
+  )
+
+  const applySavedPublicState = (state = {}) => {
+    if (state.form) setForm({ ...initialForm, ...state.form })
+    if (state.currentAddressParts) setCurrentAddressParts({ ...createEmptyAddressParts(), ...state.currentAddressParts })
+    if (state.permanentAddressParts) setPermanentAddressParts({ ...createEmptyAddressParts(), ...state.permanentAddressParts })
+    if (state.instituteAddressParts) setInstituteAddressParts({ ...createEmptyAddressParts(), ...state.instituteAddressParts })
+    if (state.collegeAddressParts) setCollegeAddressParts({ ...createEmptyAddressParts(), ...state.collegeAddressParts })
+    if (Array.isArray(state.referenceSuccessSources)) setReferenceSuccessSources(state.referenceSuccessSources)
+    if (typeof state.sameAsCurrentAddress === 'boolean') setSameAsCurrentAddress(state.sameAsCurrentAddress)
+    setCurrentStep(Math.min(Math.max(Number(state.currentStep) || 0, 0), formSteps.length - 1))
+    setDocuments({})
+    setDocumentIssues({})
+  }
+
+  const currentPublicApplyState = () => ({
+    currentStep,
+    form,
+    currentAddressParts,
+    permanentAddressParts,
+    instituteAddressParts,
+    collegeAddressParts,
+    referenceSuccessSources,
+    sameAsCurrentAddress
+  })
 
   useEffect(() => {
     let active = true
+
+    const storedSession = readStoredCandidateSession()
+    const token = storedSession?.candidateToken
+    if (token) {
+      api.get('/public/candidate/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(({ data }) => {
+          if (!active) return
+          const nextSession = { ...storedSession, candidate: data.candidate }
+          saveStoredCandidateSession(nextSession)
+          setCandidateSession(nextSession)
+          setCandidateEntryMode('update')
+          setCandidateExistingDocuments(data.candidate?.documents || [])
+          applySavedPublicState(data.candidate?.publicApplyState || {})
+          clearStoredSubmission()
+          setDone(null)
+          setDraftLoaded(true)
+        })
+        .catch(() => {
+          clearStoredCandidateSession()
+          if (active) {
+            setCandidateSession(null)
+            setCandidateEntryMode('')
+          }
+        })
+    }
 
     if (done) {
       setDraftLoaded(true)
@@ -1093,16 +1207,28 @@ export default function ApplyPage() {
   const validateDocumentFile = (file, documentType) => {
     const allowedTypes = new Set(documentType.allowedTypes || Array.from(allowedDocumentImageTypes))
     if (!allowedTypes.has(file.type)) {
-      toast.error(`${file.name} ${documentType.typeMessage || 'must be a JPG, PNG, or PDF file'}`)
-      return false
+      return {
+        valid: false,
+        issue: {
+          name: file.name || 'Selected file',
+          size: file.size || 0,
+          message: `${file.name || 'Selected file'} ${documentType.typeMessage || 'must be a JPG, PNG, or PDF file'}.`
+        }
+      }
     }
 
     if (file.size <= 0 || file.size > MAX_DOCUMENT_IMAGE_SIZE) {
-      toast.error(`${file.name} must be 10MB or less`)
-      return false
+      return {
+        valid: false,
+        issue: {
+          name: file.name || 'Selected file',
+          size: file.size || 0,
+          message: `${file.name || 'Selected file'} is ${formatFileSize(file.size)}. Upload files must be 10MB or less.`
+        }
+      }
     }
 
-    return true
+    return { valid: true }
   }
 
   const validatePersonalStep = () => {
@@ -1189,6 +1315,23 @@ export default function ApplyPage() {
     if (!validatePhoneField('fatherMobileNumber', 'Father mobile number')) return false
     if (!validatePhoneField('motherMobileNumber', 'Mother mobile number')) return false
     if (!validateSiblingPhones()) return false
+    if (!candidateSession?.candidateToken) {
+      if (candidatePassword.length < 6) {
+        toast.error('Create a password with at least 6 characters')
+        return false
+      }
+      if (candidatePassword !== candidatePasswordConfirm) {
+        toast.error('Password and confirm password do not match')
+        return false
+      }
+    }
+    if (selectedDocumentIssueCount) {
+      const message = 'Some selected documents have upload issues. Please remove or replace the highlighted files before submitting.'
+      setSubmitError(message)
+      setCurrentStep(formSteps.length - 1)
+      toast.error(message)
+      return false
+    }
 
     return true
   }
@@ -1212,21 +1355,42 @@ export default function ApplyPage() {
     if (!files.length) return
 
     if (submitError) setSubmitError('')
-    setDocuments((current) => {
-      const currentFiles = current[documentType.key] || []
-      const validFiles = files.filter((item) => validateDocumentFile(item, documentType))
-      if (!validFiles.length) return current
+    const currentFiles = documents[documentType.key] || []
+    const checkedFiles = files.map((item) => ({ file: item, result: validateDocumentFile(item, documentType) }))
+    const validFiles = checkedFiles.filter(({ result }) => result.valid).map(({ file }) => file)
+    const issues = checkedFiles.filter(({ result }) => !result.valid).map(({ result }) => result.issue)
 
-      if (currentFiles.length + validFiles.length > MAX_DOCUMENT_FILES_PER_TYPE) {
-        toast.error(`Upload up to ${MAX_DOCUMENT_FILES_PER_TYPE} files for ${documentType.label}`)
-        return current
+    setDocumentIssues((currentIssues) => {
+      const nextIssues = {
+        ...currentIssues,
+        [documentType.key]: issues
       }
-
-      return {
-        ...current,
-        [documentType.key]: [...currentFiles, ...validFiles]
-      }
+      if (!issues.length) delete nextIssues[documentType.key]
+      return nextIssues
     })
+
+    if (issues.length) {
+      const firstIssue = issues[0]
+      const extraCount = issues.length > 1 ? ` and ${issues.length - 1} more file${issues.length === 2 ? '' : 's'}` : ''
+      toast.error(`${documentType.label}: ${firstIssue.message}${extraCount}`)
+    }
+
+    if (!validFiles.length) return
+
+    if (currentFiles.length + validFiles.length > MAX_DOCUMENT_FILES_PER_TYPE) {
+      const message = `Upload up to ${MAX_DOCUMENT_FILES_PER_TYPE} files for ${documentType.label}. Remove an old file before adding more.`
+      setDocumentIssues((currentIssues) => ({
+        ...currentIssues,
+        [documentType.key]: [{ name: documentType.label, size: 0, message }]
+      }))
+      toast.error(message)
+      return
+    }
+
+    setDocuments((current) => ({
+      ...current,
+      [documentType.key]: [...(current[documentType.key] || []), ...validFiles]
+    }))
   }
 
   const removeDocumentFile = (documentKey, index) => {
@@ -1240,6 +1404,68 @@ export default function ApplyPage() {
       }
       return next
     })
+    setDocumentIssues((current) => {
+      if (!current[documentKey]) return current
+      const next = { ...current }
+      delete next[documentKey]
+      return next
+    })
+  }
+
+  const loginCandidate = async (event) => {
+    event.preventDefault()
+    const candidateCode = candidateLogin.candidateCode.trim().toUpperCase()
+    const password = candidateLogin.password
+
+    if (!candidateCode || !password) {
+      toast.error('Enter candidate ID and password')
+      return
+    }
+
+    setCandidateLoginLoading(true)
+    setSubmitError('')
+    try {
+      const { data } = await api.post('/public/candidate/login', { candidateCode, password })
+      const nextSession = {
+        candidateToken: data.candidateToken,
+        candidate: data.candidate
+      }
+      saveStoredCandidateSession(nextSession)
+      setCandidateSession(nextSession)
+      setCandidateEntryMode('update')
+      setCandidateExistingDocuments(data.candidate?.documents || [])
+      applySavedPublicState(data.candidate?.publicApplyState || {})
+      clearStoredSubmission()
+      clearStoredApplyDraft()
+      setDone(null)
+      setCandidateLogin({ candidateCode: '', password: '' })
+      setCandidateLoginOpen(false)
+      toast.success(`Logged in as ${data.candidate?.candidateCode || candidateCode}`)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not log in')
+    } finally {
+      setCandidateLoginLoading(false)
+    }
+  }
+
+  const logoutCandidate = () => {
+    clearStoredCandidateSession()
+    setCandidateSession(null)
+    setCandidateEntryMode('')
+    setCandidateExistingDocuments([])
+    setCandidateLogin({ candidateCode: '', password: '' })
+    setDocuments({})
+    setDocumentIssues({})
+    toast.success('Candidate login cleared')
+  }
+
+  const startCandidateSignup = () => {
+    clearStoredSubmission()
+    setDone(null)
+    setCandidateEntryMode('signup')
+    setCandidateLoginOpen(false)
+    setSubmitError('')
+    setCurrentStep(0)
   }
 
   const submit = async (event) => {
@@ -1464,6 +1690,11 @@ export default function ApplyPage() {
       payload.append('familyDetails', JSON.stringify(familyDetails))
       payload.append('placementReference', JSON.stringify(placementReference))
       payload.append('applicationDetails', JSON.stringify(applicationDetails))
+      payload.append('publicApplyState', JSON.stringify(currentPublicApplyState()))
+      if (!candidateSession?.candidateToken) {
+        payload.append('candidatePassword', candidatePassword)
+        payload.append('candidatePasswordConfirm', candidatePasswordConfirm)
+      }
 
       if (advisorCode.trim()) {
         payload.append('advisorCode', advisorCode.trim().toLowerCase())
@@ -1475,15 +1706,38 @@ export default function ApplyPage() {
         })
       })
 
-      const { data } = await api.post('/public/apply', payload)
+      const requestConfig = candidateSession?.candidateToken
+        ? { headers: { Authorization: `Bearer ${candidateSession.candidateToken}` } }
+        : undefined
+      const { data } = candidateSession?.candidateToken
+        ? await api.put('/public/candidate/apply', payload, requestConfig)
+        : await api.post('/public/apply', payload)
+      if (data.candidateToken || data.candidate) {
+        const nextSession = {
+          candidateToken: data.candidateToken || candidateSession?.candidateToken,
+          candidate: data.candidate || {
+            candidateCode: data.candidateCode || '',
+            fullName: form.candidateName.trim(),
+            publicApplyState: currentPublicApplyState()
+          }
+        }
+        saveStoredCandidateSession(nextSession)
+        setCandidateSession(nextSession)
+        setCandidateExistingDocuments(nextSession.candidate?.documents || candidateExistingDocuments)
+      }
       const submission = {
         name: form.candidateName.trim(),
         mode: data.mode || (advisorCode.trim() ? 'advisor' : 'walkin'),
         candidateCode: data.candidateCode || '',
+        updated: Boolean(candidateSession?.candidateToken),
         submittedAt: new Date().toISOString()
       }
       clearStoredApplyDraft()
       saveStoredSubmission(submission)
+      setDocuments({})
+      setDocumentIssues({})
+      setCandidatePassword('')
+      setCandidatePasswordConfirm('')
       setDone(submission)
     } catch (error) {
       const message = getSubmitErrorMessage(error)
@@ -1503,14 +1757,32 @@ export default function ApplyPage() {
           </div>
           <h1 className="mt-5 text-2xl font-bold text-slate-950">Application Submitted</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            Thank you {done.name}. {done.mode === 'advisor' ? 'Your application was sent to the advisor flow.' : 'Your application was sent directly to candidate management.'}
+            Thank you {done.name}. {done.updated ? 'Your application update was saved.' : done.mode === 'advisor' ? 'Your application was sent to the advisor flow.' : 'Your application was sent directly to candidate management.'}
           </p>
           {done.candidateCode ? <p className="mt-2 text-sm font-semibold text-sky-700">Your Candidate ID: {done.candidateCode}</p> : null}
+          <p className="mt-2 text-xs font-semibold text-slate-500">Use this Candidate ID and your password to update the form later.</p>
+          {candidateSession?.candidateToken ? (
+            <button
+              type="button"
+              onClick={() => {
+                clearStoredSubmission()
+                setDone(null)
+                applySavedPublicState(candidateSession.candidate?.publicApplyState || currentPublicApplyState())
+                setCurrentStep(0)
+              }}
+              className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
+            >
+              Update submitted application
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => {
               clearStoredSubmission()
               clearStoredApplyDraft()
+              clearStoredCandidateSession()
+              setCandidateSession(null)
+              setCandidateExistingDocuments([])
               setDone(null)
               setCurrentStep(0)
               setForm(initialForm)
@@ -1521,9 +1793,12 @@ export default function ApplyPage() {
               setReferenceSuccessSources([])
               setSameAsCurrentAddress(false)
               setDocuments({})
+              setDocumentIssues({})
+              setCandidatePassword('')
+              setCandidatePasswordConfirm('')
               setSubmitError('')
             }}
-            className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             Submit another application
           </button>
@@ -1534,7 +1809,22 @@ export default function ApplyPage() {
 
   return (
     <PublicShell>
-      <form onSubmit={submit} className="mx-auto grid max-w-5xl gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="mx-auto max-w-5xl space-y-3">
+        <CandidatePortalPanel
+          session={candidateSession}
+          entryMode={candidateEntryMode}
+          loginOpen={candidateLoginOpen}
+          setLoginOpen={setCandidateLoginOpen}
+          login={candidateLogin}
+          setLogin={setCandidateLogin}
+          loading={candidateLoginLoading}
+          onSignup={startCandidateSignup}
+          onLogin={loginCandidate}
+          onLogout={logoutCandidate}
+        />
+
+      {candidateSession?.candidateToken || candidateEntryMode === 'signup' ? (
+      <form onSubmit={submit} className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
         <WizardSidebar
           currentStep={currentStep}
           progress={progress}
@@ -1648,28 +1938,78 @@ export default function ApplyPage() {
 
               {currentStep === 4 ? (
                 <div className="space-y-6">
-                  <div>
-                    <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
-                      <FileImage className="h-4 w-4 text-sky-700" />
-                      Upload Documents
+                  {!candidateSession?.candidateToken ? (
+                    <CandidatePasswordPanel
+                      password={candidatePassword}
+                      confirmPassword={candidatePasswordConfirm}
+                      onPassword={setCandidatePassword}
+                      onConfirmPassword={setCandidatePasswordConfirm}
+                    />
+                  ) : (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
+                        <KeyRound className="h-4 w-4" />
+                        Updating Candidate ID {candidateSession.candidate?.candidateCode}
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-emerald-700">Your saved login is active in this browser.</p>
                     </div>
+                  )}
+
+                  <div>
+                    <div className="mb-3 rounded-lg border border-sky-100 bg-sky-50/60 px-3 py-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-800">
+                          <FileImage className="h-4 w-4 shrink-0 text-sky-700" />
+                          <span>Upload Documents</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs font-bold">
+                          <span className="rounded-md bg-white px-2.5 py-1 text-sky-800 ring-1 ring-sky-200">
+                            {selectedDocumentCount} selected
+                          </span>
+                          {selectedDocumentIssueCount ? (
+                            <span className="rounded-md bg-rose-50 px-2.5 py-1 text-rose-700 ring-1 ring-rose-200">
+                              {selectedDocumentIssueCount} issue{selectedDocumentIssueCount === 1 ? '' : 's'}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs font-semibold text-slate-600">
+                        Each file must be 10MB or less. Files that cannot be accepted are shown under their document name.
+                      </p>
+                    </div>
+                    {candidateExistingDocuments.length ? (
+                      <div className="mb-3 rounded-lg border border-slate-200 bg-white px-3 py-3">
+                        <p className="text-sm font-bold text-slate-900">Already Uploaded</p>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {candidateExistingDocuments.map((doc, index) => (
+                            <div key={`${doc._id || doc.fileName}-${index}`} className="min-w-0 rounded-md bg-slate-50 px-2.5 py-2 ring-1 ring-slate-100">
+                              <p className="truncate text-xs font-bold text-slate-800">{doc.documentLabel || doc.documentType || 'Document'}</p>
+                              <p className="truncate text-[11px] font-semibold text-slate-500">{doc.fileName || 'Uploaded file'}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       {resumeCandidateDocumentType ? (
                         <DocumentUpload
                           key={resumeCandidateDocumentType.key}
                           documentType={resumeCandidateDocumentType}
                           files={documents[resumeCandidateDocumentType.key] || []}
+                          issues={documentIssues[resumeCandidateDocumentType.key] || []}
                           onFiles={(files) => addDocumentFiles(resumeCandidateDocumentType, files)}
                           onRemove={(index) => removeDocumentFile(resumeCandidateDocumentType.key, index)}
                         />
                       ) : null}
                       <EducationCertificateUploadGroup
                         documents={documents}
+                        documentIssues={documentIssues}
                         addDocumentFiles={addDocumentFiles}
                         removeDocumentFile={removeDocumentFile}
                       />
                       <ComputerCourseUploadGroup
                         documents={documents}
+                        documentIssues={documentIssues}
                         addDocumentFiles={addDocumentFiles}
                         removeDocumentFile={removeDocumentFile}
                       />
@@ -1678,6 +2018,7 @@ export default function ApplyPage() {
                           key={documentType.key}
                           documentType={documentType}
                           files={documents[documentType.key] || []}
+                          issues={documentIssues[documentType.key] || []}
                           onFiles={(files) => addDocumentFiles(documentType, files)}
                           onRemove={(index) => removeDocumentFile(documentType.key, index)}
                         />
@@ -1711,7 +2052,7 @@ export default function ApplyPage() {
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70 sm:min-w-52"
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  {submitting ? 'Submitting...' : 'Submit Application'}
+                  {submitting ? 'Saving...' : candidateSession?.candidateToken ? 'Update Application' : 'Submit Application'}
                 </button>
               ) : (
                 <button
@@ -1728,6 +2069,8 @@ export default function ApplyPage() {
           </div>
         </div>
       </form>
+      ) : null}
+      </div>
     </PublicShell>
   )
 }
@@ -1770,6 +2113,117 @@ function PublicShell({ children }) {
         <footer className="py-7 text-center text-xs font-semibold text-slate-500">Powered by SUCCESS HR Solution</footer>
       </div>
     </main>
+  )
+}
+
+function CandidatePortalPanel({ session, loginOpen, setLoginOpen, login, setLogin, loading, onLogin, onLogout }) {
+  if (session?.candidateToken) {
+    return (
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm font-bold text-emerald-900">
+              <KeyRound className="h-4 w-4 shrink-0" />
+              <span>Candidate login active</span>
+            </div>
+            <p className="mt-1 text-xs font-semibold text-emerald-700">
+              ID {session.candidate?.candidateCode || '-'} is ready for form updates.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="inline-flex min-h-9 items-center justify-center rounded-md border border-emerald-300 bg-white px-3 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+            <LogIn className="h-4 w-4 shrink-0 text-sky-700" />
+            <span>Already submitted?</span>
+          </div>
+          <p className="mt-1 text-xs font-semibold text-slate-500">Log in with Candidate ID and password to update your form.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setLoginOpen((current) => !current)}
+          className="inline-flex min-h-9 items-center justify-center rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-bold text-sky-700 hover:bg-sky-100"
+        >
+          Candidate Login
+        </button>
+      </div>
+
+      {loginOpen ? (
+        <form onSubmit={onLogin} className="mt-3 grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-[1fr_1fr_auto]">
+          <label className="block text-xs font-bold text-slate-700">
+            Candidate ID
+            <input
+              value={login.candidateCode}
+              onChange={(event) => setLogin((current) => ({ ...current, candidateCode: event.target.value.toUpperCase() }))}
+              placeholder="SC-1"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold uppercase outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100"
+            />
+          </label>
+          <label className="block text-xs font-bold text-slate-700">
+            Password
+            <input
+              type="password"
+              value={login.password}
+              onChange={(event) => setLogin((current) => ({ ...current, password: event.target.value }))}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-70 sm:self-end"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+            Login
+          </button>
+        </form>
+      ) : null}
+    </div>
+  )
+}
+
+function CandidatePasswordPanel({ password, confirmPassword, onPassword, onConfirmPassword }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
+      <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+        <KeyRound className="h-4 w-4 text-sky-700" />
+        <span>Create Candidate Login</span>
+      </div>
+      <p className="mt-1 text-xs font-semibold text-slate-500">Your generated Candidate ID and this password will be used to update this form later.</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="block text-xs font-bold text-slate-700">
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => onPassword(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100"
+          />
+        </label>
+        <label className="block text-xs font-bold text-slate-700">
+          Confirm Password
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => onConfirmPassword(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-cyan-100"
+          />
+        </label>
+      </div>
+    </div>
   )
 }
 
@@ -2674,7 +3128,7 @@ function SelectField({ label, value, onChange, options }) {
   )
 }
 
-function EducationCertificateUploadGroup({ documents, addDocumentFiles, removeDocumentFile }) {
+function EducationCertificateUploadGroup({ documents, documentIssues, addDocumentFiles, removeDocumentFile }) {
   return (
     <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-3 md:col-span-2 xl:col-span-3">
       <div className="mb-3">
@@ -2688,6 +3142,7 @@ function EducationCertificateUploadGroup({ documents, addDocumentFiles, removeDo
             documentType={documentType}
             label={educationCertificateLabel(documentType)}
             files={documents[documentType.key] || []}
+            issues={documentIssues[documentType.key] || []}
             onFiles={(files) => addDocumentFiles(documentType, files)}
             onRemove={(index) => removeDocumentFile(documentType.key, index)}
           />
@@ -2697,7 +3152,7 @@ function EducationCertificateUploadGroup({ documents, addDocumentFiles, removeDo
   )
 }
 
-function ComputerCourseUploadGroup({ documents, addDocumentFiles, removeDocumentFile }) {
+function ComputerCourseUploadGroup({ documents, documentIssues, addDocumentFiles, removeDocumentFile }) {
   return (
     <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-3 md:col-span-2 xl:col-span-3">
       <div className="mb-3">
@@ -2710,6 +3165,7 @@ function ComputerCourseUploadGroup({ documents, addDocumentFiles, removeDocument
             key={documentType.key}
             documentType={documentType}
             files={documents[documentType.key] || []}
+            issues={documentIssues[documentType.key] || []}
             onFiles={(files) => addDocumentFiles(documentType, files)}
             onRemove={(index) => removeDocumentFile(documentType.key, index)}
           />
@@ -2719,18 +3175,24 @@ function ComputerCourseUploadGroup({ documents, addDocumentFiles, removeDocument
   )
 }
 
-function DocumentUpload({ documentType, label, files, onFiles, onRemove }) {
+function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRemove }) {
   const inputId = `document-${documentType.key}`
   const inputRef = useRef(null)
+  const acceptedTypes = readableFileTypes(documentType)
 
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3">
+    <div className={`rounded-lg border bg-white p-3 ${issues.length ? 'border-rose-300 ring-1 ring-rose-100' : files.length ? 'border-emerald-200 ring-1 ring-emerald-100' : 'border-dashed border-slate-300'}`}>
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <label htmlFor={inputId} className="block text-[13px] font-bold text-slate-900">
             {label || documentType.label}
           </label>
-          <p className="mt-1 text-xs font-semibold text-slate-500">JPG, PNG, or PDF up to 10MB</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{acceptedTypes} up to 10MB each</p>
+          {files.length ? (
+            <p className="mt-1 text-xs font-bold text-emerald-700">
+              {files.length} file{files.length === 1 ? '' : 's'} ready to submit
+            </p>
+          ) : null}
         </div>
         <button
           type="button"
@@ -2760,8 +3222,11 @@ function DocumentUpload({ documentType, label, files, onFiles, onRemove }) {
       {files.length ? (
         <div className="mt-3 space-y-2">
           {files.map((file, index) => (
-            <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-2 rounded-md bg-slate-50 px-2.5 py-2 ring-1 ring-slate-200">
-              <span className="min-w-0 truncate text-xs font-semibold text-slate-700">{file.name}</span>
+            <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-2 rounded-md bg-emerald-50 px-2.5 py-2 ring-1 ring-emerald-100">
+              <div className="min-w-0">
+                <span className="block truncate text-xs font-bold text-slate-800">{file.name}</span>
+                <span className="block text-[11px] font-semibold text-emerald-700">{formatFileSize(file.size)} selected</span>
+              </div>
               <button
                 type="button"
                 onClick={() => onRemove(index)}
@@ -2770,6 +3235,22 @@ function DocumentUpload({ documentType, label, files, onFiles, onRemove }) {
               >
                 <X className="h-4 w-4" />
               </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {issues.length ? (
+        <div className="mt-3 space-y-2">
+          {issues.map((issue, index) => (
+            <div key={`${issue.name}-${index}`} className="rounded-md bg-rose-50 px-2.5 py-2 text-xs font-semibold text-rose-800 ring-1 ring-rose-100">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="break-words">{issue.message}</p>
+                  {issue.size ? <p className="mt-1 text-[11px] text-rose-700">File size: {formatFileSize(issue.size)}</p> : null}
+                </div>
+              </div>
             </div>
           ))}
         </div>
