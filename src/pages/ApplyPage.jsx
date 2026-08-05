@@ -866,11 +866,13 @@ const mapAdminDataToCandidateForm = (c, prev) => {
   f.dateOfBirth = c.dateOfBirth || prev.dateOfBirth
   f.currentAddress = c.currentAddress || prev.currentAddress
   f.permanentAddress = c.permanentAddress || prev.permanentAddress
+  f.collegeName = c.collegeName || prev.collegeName
   
   f.educationSector = c.education || prev.educationSector
   f.yearOfHigherEducation = c.yearOfHigherEducation || prev.yearOfHigherEducation
   f.computerCourse = c.computerCourses || prev.computerCourse
   f.educationSpecialization = c.specialization || prev.educationSpecialization
+  f.otherAchievements = c.otherAchievements || prev.otherAchievements
   f.totalExperience = c.totalExperience || prev.totalExperience
   f.experienceDepartment = c.experienceDepartment || prev.experienceDepartment
   f.currentCompany = c.currentCompany || prev.currentCompany
@@ -893,6 +895,13 @@ const mapAdminDataToCandidateForm = (c, prev) => {
   
   if (c.keySkills && Array.isArray(c.keySkills)) {
     f.keySkillItems = c.keySkills
+  }
+  
+  if (c.languagesKnown && Array.isArray(c.languagesKnown)) {
+    // Determine which checkboxes to check based on languagesKnown string matches
+    const langs = c.languagesKnown.map(l => l.toLowerCase())
+    if (langs.includes('english typing')) f.englishTyping = true
+    if (langs.includes('hindi typing') || langs.includes('marathi typing')) f.hindiTyping = true
   }
   
   if (c.placementReference) {
