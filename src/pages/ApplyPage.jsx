@@ -2248,6 +2248,45 @@ export default function ApplyPage() {
         </div>
       </form>
       </div>
+
+      {/* ── Image Preview Lightbox ── */}
+      {previewDoc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewDoc(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewDoc(null)}
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/40 transition-colors"
+            aria-label="Close preview"
+          >
+            <X size={20} />
+          </button>
+          <div
+            className="relative max-h-[90vh] max-w-[90vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewDoc.fileUrl}
+              alt={previewDoc.documentLabel || previewDoc.fileName || 'Document preview'}
+              className="max-h-[85vh] max-w-[88vw] rounded-lg object-contain shadow-2xl"
+              onError={(e) => {
+                e.target.style.display = 'none'
+              }}
+            />
+            {(previewDoc.documentLabel || previewDoc.fileName) && (
+              <p className="mt-2 text-center text-sm font-semibold text-white/80">
+                {previewDoc.documentLabel || previewDoc.fileName}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
     </PublicShell>
   )
 }
@@ -3432,43 +3471,6 @@ function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRe
           ))}
         </div>
       ) : null}
-      {/* ── Image Preview Lightbox ── */}
-      {previewDoc && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setPreviewDoc(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image preview"
-        >
-          <button
-            type="button"
-            onClick={() => setPreviewDoc(null)}
-            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/40 transition-colors"
-            aria-label="Close preview"
-          >
-            <X size={20} />
-          </button>
-          <div
-            className="relative max-h-[90vh] max-w-[90vw]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={previewDoc.fileUrl}
-              alt={previewDoc.documentLabel || previewDoc.fileName || 'Document preview'}
-              className="max-h-[85vh] max-w-[88vw] rounded-lg object-contain shadow-2xl"
-              onError={(e) => {
-                e.target.style.display = 'none'
-              }}
-            />
-            {(previewDoc.documentLabel || previewDoc.fileName) && (
-              <p className="mt-2 text-center text-sm font-semibold text-white/80">
-                {previewDoc.documentLabel || previewDoc.fileName}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
