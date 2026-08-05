@@ -959,6 +959,7 @@ export default function ApplyPage() {
   const [candidateLoginLoading, setCandidateLoginLoading] = useState(false)
   const [candidateEntryMode, setCandidateEntryMode] = useState(() => (readStoredCandidateSession()?.candidateToken ? 'update' : ''))
   const [candidateExistingDocuments, setCandidateExistingDocuments] = useState([])
+  const [previewDoc, setPreviewDoc] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [done, setDone] = useState(() => readStoredSubmission())
@@ -2133,12 +2134,37 @@ export default function ApplyPage() {
                       <div className="mb-3 rounded-lg border border-slate-200 bg-white px-3 py-3">
                         <p className="text-sm font-bold text-slate-900">Already Uploaded</p>
                         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          {candidateExistingDocuments.map((doc, index) => (
-                            <div key={`${doc._id || doc.fileName}-${index}`} className="min-w-0 rounded-md bg-slate-50 px-2.5 py-2 ring-1 ring-slate-100">
-                              <p className="truncate text-xs font-bold text-slate-800">{doc.documentLabel || doc.documentType || 'Document'}</p>
-                              <p className="truncate text-[11px] font-semibold text-slate-500">{doc.fileName || 'Uploaded file'}</p>
-                            </div>
-                          ))}
+                          {candidateExistingDocuments.map((doc, index) => {
+                            const isImage = doc.mimeType
+                              ? doc.mimeType.startsWith('image/')
+                              : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(doc.fileName || '')
+                            const handleDocClick = () => {
+                              if (!doc.fileUrl) return
+                              if (isImage) {
+                                setPreviewDoc(doc)
+                              } else {
+                                window.open(doc.fileUrl, '_blank', 'noopener,noreferrer')
+                              }
+                            }
+                            return (
+                              <div
+                                key={`${doc._id || doc.fileName}-${index}`}
+                                onClick={doc.fileUrl ? handleDocClick : undefined}
+                                className={`min-w-0 rounded-md bg-slate-50 px-2.5 py-2 ring-1 ring-slate-100 ${
+                                  doc.fileUrl ? 'cursor-pointer hover:bg-slate-100 hover:ring-sky-300 transition-colors' : ''
+                                }`}
+                                title={doc.fileUrl ? (isImage ? 'Click to preview' : 'Click to open') : undefined}
+                              >
+                                <p className="truncate text-xs font-bold text-slate-800">{doc.documentLabel || doc.documentType || 'Document'}</p>
+                                <p className="truncate text-[11px] font-semibold text-slate-500">{doc.fileName || 'Uploaded file'}</p>
+                                {doc.fileUrl && (
+                                  <p className="mt-0.5 text-[10px] font-semibold text-sky-600">
+                                    {isImage ? '🖼 Click to preview' : '📄 Click to open'}
+                                  </p>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     ) : null}
@@ -3406,6 +3432,43 @@ function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRe
           ))}
         </div>
       ) : null}
+      {/* ── Image Preview Lightbox ── */}
+      {previewDoc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewDoc(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewDoc(null)}
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/40 transition-colors"
+            aria-label="Close preview"
+          >
+            <X size={20} />
+          </button>
+          <div
+            className="relative max-h-[90vh] max-w-[90vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewDoc.fileUrl}
+              alt={previewDoc.documentLabel || previewDoc.fileName || 'Document preview'}
+              className="max-h-[85vh] max-w-[88vw] rounded-lg object-contain shadow-2xl"
+              onError={(e) => {
+                e.target.style.display = 'none'
+              }}
+            />
+            {(previewDoc.documentLabel || previewDoc.fileName) && (
+              <p className="mt-2 text-center text-sm font-semibold text-white/80">
+                {previewDoc.documentLabel || previewDoc.fileName}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
