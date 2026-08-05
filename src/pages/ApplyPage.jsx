@@ -853,45 +853,48 @@ const clearStoredCandidateSession = () => {
 const mapAdminDataToCandidateForm = (c, prev) => {
   if (!c) return prev
   
+  // CMS data ALWAYS takes priority over any stale cached values.
+  // Use ?? (nullish coalescing) so empty strings from CMS clear old values,
+  // but only fall back to prev if CMS field is null/undefined.
   const f = { ...prev }
-  f.candidateName = c.fullName || prev.candidateName
-  f.mobileNumber = c.mobileNumber || prev.mobileNumber
-  f.whatsappNo = c.whatsappNo || prev.whatsappNo
-  f.emailId = c.emailId || prev.emailId
-  f.gender = c.gender || prev.gender
-  f.currentAge = c.currentAge || prev.currentAge
-  f.marriageStatus = c.marriageStatus || prev.marriageStatus
-  f.aadhaarNo = c.aadhaarNo || prev.aadhaarNo
-  f.panNo = c.panNo || prev.panNo
-  f.dateOfBirth = c.dateOfBirth || prev.dateOfBirth
-  f.currentAddress = c.currentAddress || prev.currentAddress
-  f.permanentAddress = c.permanentAddress || prev.permanentAddress
-  f.collegeName = c.collegeName || prev.collegeName
+  f.candidateName = c.fullName ?? prev.candidateName
+  f.mobileNumber = c.mobileNumber ?? prev.mobileNumber
+  f.whatsappNo = c.whatsappNo ?? prev.whatsappNo
+  f.emailId = c.emailId ?? prev.emailId
+  f.gender = c.gender ?? prev.gender
+  f.currentAge = c.currentAge ?? prev.currentAge
+  f.marriageStatus = c.marriageStatus ?? prev.marriageStatus
+  f.aadhaarNo = c.aadhaarNo ?? prev.aadhaarNo
+  f.panNo = c.panNo ?? prev.panNo
+  f.dateOfBirth = c.dateOfBirth ?? prev.dateOfBirth
+  f.currentAddress = c.currentAddress ?? prev.currentAddress
+  f.permanentAddress = c.permanentAddress ?? prev.permanentAddress
+  f.collegeName = c.collegeName ?? prev.collegeName
   
-  f.educationSector = c.education || prev.educationSector
-  f.yearOfHigherEducation = c.yearOfHigherEducation || prev.yearOfHigherEducation
-  f.computerCourse = c.computerCourses || prev.computerCourse
-  f.educationSpecialization = c.specialization || prev.educationSpecialization
-  f.otherAchievements = c.otherAchievements || prev.otherAchievements
-  f.totalExperience = c.totalExperience || prev.totalExperience
-  f.experienceDepartment = c.experienceDepartment || prev.experienceDepartment
-  f.currentCompany = c.currentCompany || prev.currentCompany
-  f.lookingForField = c.lookingForField || prev.lookingForField
-  f.keyResponsibilities = c.keyResponsibilities || prev.keyResponsibilities
-  f.careerSummary = c.careerSummary || prev.careerSummary
-  f.jobWorkingStatus = c.currentDesignation || prev.jobWorkingStatus
-  f.currentSalary = c.currentSalary || prev.currentSalary
-  f.expectedSalary = c.expectedSalary || prev.expectedSalary
-  f.noticePeriod = c.noticePeriod || prev.noticePeriod
-  f.preferredJobLocation = c.preferredJobLocation || prev.preferredJobLocation
-  f.appliedFor = c.appliedFor || prev.appliedFor
-  f.interestedDepartment = c.interestedDepartment || prev.interestedDepartment
-  f.preferredIndustry = c.preferredIndustry || prev.preferredIndustry
-  f.availabilityForInterview = c.availabilityForInterview || prev.availabilityForInterview
-  f.interviewMode = c.interviewMode || prev.interviewMode
-  f.reasonForJobChange = c.reasonForJobChange || prev.reasonForJobChange
-  f.currentJobLocation = c.currentJobLocation || prev.currentJobLocation
-  f.currentJobLocationMidcArea = c.currentJobLocationMidcArea || prev.currentJobLocationMidcArea
+  f.educationSector = c.education ?? prev.educationSector
+  f.yearOfHigherEducation = c.yearOfHigherEducation ?? prev.yearOfHigherEducation
+  f.computerCourse = c.computerCourses ?? prev.computerCourse
+  f.educationSpecialization = c.specialization ?? prev.educationSpecialization
+  f.otherAchievements = c.otherAchievements ?? prev.otherAchievements
+  f.totalExperience = c.totalExperience ?? prev.totalExperience
+  f.experienceDepartment = c.experienceDepartment ?? prev.experienceDepartment
+  f.currentCompany = c.currentCompany ?? prev.currentCompany
+  f.lookingForField = c.lookingForField ?? prev.lookingForField
+  f.keyResponsibilities = c.keyResponsibilities ?? prev.keyResponsibilities
+  f.careerSummary = c.careerSummary ?? prev.careerSummary
+  f.jobWorkingStatus = c.currentDesignation ?? prev.jobWorkingStatus
+  f.currentSalary = c.currentSalary ?? prev.currentSalary
+  f.expectedSalary = c.expectedSalary ?? prev.expectedSalary
+  f.noticePeriod = c.noticePeriod ?? prev.noticePeriod
+  f.preferredJobLocation = c.preferredJobLocation ?? prev.preferredJobLocation
+  f.appliedFor = c.appliedFor ?? prev.appliedFor
+  f.interestedDepartment = c.interestedDepartment ?? prev.interestedDepartment
+  f.preferredIndustry = c.preferredIndustry ?? prev.preferredIndustry
+  f.availabilityForInterview = c.availabilityForInterview ?? prev.availabilityForInterview
+  f.interviewMode = c.interviewMode ?? prev.interviewMode
+  f.reasonForJobChange = c.reasonForJobChange ?? prev.reasonForJobChange
+  f.currentJobLocation = c.currentJobLocation ?? prev.currentJobLocation
+  f.currentJobLocationMidcArea = c.currentJobLocationMidcArea ?? prev.currentJobLocationMidcArea
   
   if (c.keySkills && Array.isArray(c.keySkills)) {
     f.keySkillItems = c.keySkills
@@ -905,26 +908,32 @@ const mapAdminDataToCandidateForm = (c, prev) => {
   }
   
   if (c.placementReference) {
-    f.professorName = c.placementReference.professorName || prev.professorName
-    f.professorContactNumber = c.placementReference.professorContactNumber || prev.professorContactNumber
-    f.referenceBy = c.placementReference.referenceBy || prev.referenceBy
-    f.referenceContactNumber = c.placementReference.referenceContactNumber || prev.referenceContactNumber
+    f.professorName = c.placementReference.professorName ?? prev.professorName
+    f.professorContactNumber = c.placementReference.professorContactNumber ?? prev.professorContactNumber
+    f.referenceBy = c.placementReference.referenceBy ?? prev.referenceBy
+    f.referenceContactNumber = c.placementReference.referenceContactNumber ?? prev.referenceContactNumber
   }
   
   if (c.familyDetails) {
-    f.fatherOrHusbandName = c.familyDetails.fatherOrHusbandName || prev.fatherOrHusbandName
-    f.fatherOccupation = c.familyDetails.fatherOccupation || prev.fatherOccupation
-    f.fatherMobileNumber = c.familyDetails.fatherMobileNumber || prev.fatherMobileNumber
-    f.motherOrWifeName = c.familyDetails.motherOrWifeName || prev.motherOrWifeName
-    f.motherOccupation = c.familyDetails.motherOccupation || prev.motherOccupation
-    f.motherMobileNumber = c.familyDetails.motherMobileNumber || prev.motherMobileNumber
+    f.fatherOrHusbandName = c.familyDetails.fatherOrHusbandName ?? prev.fatherOrHusbandName
+    f.fatherOccupation = c.familyDetails.fatherOccupation ?? prev.fatherOccupation
+    f.fatherMobileNumber = c.familyDetails.fatherMobileNumber ?? prev.fatherMobileNumber
+    f.motherOrWifeName = c.familyDetails.motherOrWifeName ?? prev.motherOrWifeName
+    f.motherOccupation = c.familyDetails.motherOccupation ?? prev.motherOccupation
+    f.motherMobileNumber = c.familyDetails.motherMobileNumber ?? prev.motherMobileNumber
     if (c.familyDetails.siblings && c.familyDetails.siblings.length > 0) {
       f.siblings = c.familyDetails.siblings
     }
   }
 
+  // Map top-level CMS fields that have form equivalents
+  if (c.goalAim !== undefined) f.goalAim = c.goalAim ?? prev.goalAim
+  if (c.feedback !== undefined) f.feedback = c.feedback ?? prev.feedback
+  if (c.suggestion !== undefined) f.suggestion = c.suggestion ?? prev.suggestion
+
   return f
 }
+
 
 export default function ApplyPage() {
   const { code } = useParams()
@@ -975,8 +984,14 @@ export default function ApplyPage() {
   )
 
   const applySavedPublicState = (state = {}, candidateData = null) => {
-    // Always start from a clean slate for authenticated candidates to avoid inheriting previous candidate's state
-    const baseForm = state.form ? { ...initialForm, ...state.form } : { ...initialForm }
+    // When candidateData (CMS data) is present (logged-in candidate),
+    // ALWAYS build the form entirely from the fresh CMS database fields.
+    // The publicApplyState.form is OLD candidate-submitted data and must NOT
+    // override what the admin has updated in the CMS.
+    // Only use publicApplyState for navigation state (currentStep, address parts, etc.)
+    const baseForm = candidateData
+      ? { ...initialForm }  // Start clean - CMS data is the source of truth
+      : (state.form ? { ...initialForm, ...state.form } : { ...initialForm }) // Non-logged-in: use draft
     setForm(mapAdminDataToCandidateForm(candidateData, baseForm))
 
     setCurrentAddressParts(state.currentAddressParts ? { ...createEmptyAddressParts(), ...state.currentAddressParts } : createEmptyAddressParts())

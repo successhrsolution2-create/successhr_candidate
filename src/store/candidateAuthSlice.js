@@ -79,6 +79,10 @@ const candidateAuthSlice = createSlice({
       state.checking = false
       state.candidate = action.payload.candidate || action.payload
       localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(action.payload))
+      localStorage.setItem('success-public-apply:candidate-session', JSON.stringify({
+        candidateToken: action.payload.candidateToken,
+        candidate: state.candidate
+      }))
     }
   },
   extraReducers: (builder) => {
@@ -99,6 +103,10 @@ const candidateAuthSlice = createSlice({
           payloadToSave.candidateToken = action.payload.candidateToken
         }
         localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(payloadToSave))
+        localStorage.setItem('success-public-apply:candidate-session', JSON.stringify({
+          candidateToken: action.payload.candidateToken,
+          candidate: state.candidate
+        }))
       })
       .addCase(loginCandidatePortal.rejected, (state, action) => {
         state.loading = false
@@ -119,6 +127,10 @@ const candidateAuthSlice = createSlice({
           payloadToSave.candidateToken = existingSession.candidateToken
         }
         localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify(payloadToSave))
+        localStorage.setItem('success-public-apply:candidate-session', JSON.stringify({
+          candidateToken: payloadToSave.candidateToken,
+          candidate: state.candidate
+        }))
       })
       .addCase(fetchCandidateSession.rejected, (state) => {
         state.checking = false
