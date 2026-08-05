@@ -850,6 +850,73 @@ const clearStoredCandidateSession = () => {
   }
 }
 
+const mapAdminDataToCandidateForm = (c, prev) => {
+  if (!c) return prev
+  
+  const f = { ...prev }
+  f.candidateName = c.fullName || prev.candidateName
+  f.mobileNumber = c.mobileNumber || prev.mobileNumber
+  f.whatsappNo = c.whatsappNo || prev.whatsappNo
+  f.emailId = c.emailId || prev.emailId
+  f.gender = c.gender || prev.gender
+  f.currentAge = c.currentAge || prev.currentAge
+  f.marriageStatus = c.marriageStatus || prev.marriageStatus
+  f.aadhaarNo = c.aadhaarNo || prev.aadhaarNo
+  f.panNo = c.panNo || prev.panNo
+  f.dateOfBirth = c.dateOfBirth || prev.dateOfBirth
+  f.currentAddress = c.currentAddress || prev.currentAddress
+  f.permanentAddress = c.permanentAddress || prev.permanentAddress
+  
+  f.educationSector = c.education || prev.educationSector
+  f.yearOfHigherEducation = c.yearOfHigherEducation || prev.yearOfHigherEducation
+  f.computerCourse = c.computerCourses || prev.computerCourse
+  f.educationSpecialization = c.specialization || prev.educationSpecialization
+  f.totalExperience = c.totalExperience || prev.totalExperience
+  f.experienceDepartment = c.experienceDepartment || prev.experienceDepartment
+  f.currentCompany = c.currentCompany || prev.currentCompany
+  f.lookingForField = c.lookingForField || prev.lookingForField
+  f.keyResponsibilities = c.keyResponsibilities || prev.keyResponsibilities
+  f.careerSummary = c.careerSummary || prev.careerSummary
+  f.jobWorkingStatus = c.currentDesignation || prev.jobWorkingStatus
+  f.currentSalary = c.currentSalary || prev.currentSalary
+  f.expectedSalary = c.expectedSalary || prev.expectedSalary
+  f.noticePeriod = c.noticePeriod || prev.noticePeriod
+  f.preferredJobLocation = c.preferredJobLocation || prev.preferredJobLocation
+  f.appliedFor = c.appliedFor || prev.appliedFor
+  f.interestedDepartment = c.interestedDepartment || prev.interestedDepartment
+  f.preferredIndustry = c.preferredIndustry || prev.preferredIndustry
+  f.availabilityForInterview = c.availabilityForInterview || prev.availabilityForInterview
+  f.interviewMode = c.interviewMode || prev.interviewMode
+  f.reasonForJobChange = c.reasonForJobChange || prev.reasonForJobChange
+  f.currentJobLocation = c.currentJobLocation || prev.currentJobLocation
+  f.currentJobLocationMidcArea = c.currentJobLocationMidcArea || prev.currentJobLocationMidcArea
+  
+  if (c.keySkills && Array.isArray(c.keySkills)) {
+    f.keySkillItems = c.keySkills
+  }
+  
+  if (c.placementReference) {
+    f.professorName = c.placementReference.professorName || prev.professorName
+    f.professorContactNumber = c.placementReference.professorContactNumber || prev.professorContactNumber
+    f.referenceBy = c.placementReference.referenceBy || prev.referenceBy
+    f.referenceContactNumber = c.placementReference.referenceContactNumber || prev.referenceContactNumber
+  }
+  
+  if (c.familyDetails) {
+    f.fatherOrHusbandName = c.familyDetails.fatherOrHusbandName || prev.fatherOrHusbandName
+    f.fatherOccupation = c.familyDetails.fatherOccupation || prev.fatherOccupation
+    f.fatherMobileNumber = c.familyDetails.fatherMobileNumber || prev.fatherMobileNumber
+    f.motherOrWifeName = c.familyDetails.motherOrWifeName || prev.motherOrWifeName
+    f.motherOccupation = c.familyDetails.motherOccupation || prev.motherOccupation
+    f.motherMobileNumber = c.familyDetails.motherMobileNumber || prev.motherMobileNumber
+    if (c.familyDetails.siblings && c.familyDetails.siblings.length > 0) {
+      f.siblings = c.familyDetails.siblings
+    }
+  }
+
+  return f
+}
+
 export default function ApplyPage() {
   const { code } = useParams()
   const dispatch = useDispatch()
@@ -916,8 +983,12 @@ export default function ApplyPage() {
     [documentIssues]
   )
 
-  const applySavedPublicState = (state = {}) => {
-    if (state.form) setForm({ ...initialForm, ...state.form })
+  const applySavedPublicState = (state = {}, candidateData = null) => {
+    if (state.form) {
+      setForm(mapAdminDataToCandidateForm(candidateData, { ...initialForm, ...state.form }))
+    } else if (candidateData) {
+      setForm((prev) => mapAdminDataToCandidateForm(candidateData, prev))
+    }
     if (state.currentAddressParts) setCurrentAddressParts({ ...createEmptyAddressParts(), ...state.currentAddressParts })
     if (state.permanentAddressParts) setPermanentAddressParts({ ...createEmptyAddressParts(), ...state.permanentAddressParts })
     if (state.instituteAddressParts) setInstituteAddressParts({ ...createEmptyAddressParts(), ...state.instituteAddressParts })
@@ -962,28 +1033,7 @@ export default function ApplyPage() {
           setCandidateEntryMode('update')
           setCandidateExistingDocuments(data.candidate?.documents || [])
           const publicState = data.candidate?.publicApplyState || {}
-          // If publicApplyState has form data from a previous submission, use it.
-          // Otherwise pre-fill the form from admin-entered CMS fields.
-          if (publicState.form) {
-            applySavedPublicState(publicState)
-          } else {
-            const c = data.candidate || {}
-            setForm((prev) => ({
-              ...prev,
-              candidateName: c.fullName || prev.candidateName,
-              mobileNumber: c.mobileNumber || prev.mobileNumber,
-              whatsappNo: c.whatsappNo || prev.whatsappNo,
-              emailId: c.emailId || prev.emailId,
-              gender: c.gender || prev.gender,
-              currentAge: c.currentAge || prev.currentAge,
-              marriageStatus: c.marriageStatus || prev.marriageStatus,
-              aadhaarNo: c.aadhaarNo || prev.aadhaarNo,
-              panNo: c.panNo || prev.panNo,
-              dateOfBirth: c.dateOfBirth || prev.dateOfBirth,
-              currentAddress: c.currentAddress || prev.currentAddress,
-              permanentAddress: c.permanentAddress || prev.permanentAddress
-            }))
-          }
+          applySavedPublicState(publicState, data.candidate)
           clearStoredSubmission()
           setDone(null)
           setDraftLoaded(true)
@@ -1494,26 +1544,7 @@ export default function ApplyPage() {
       setCandidateEntryMode('update')
       setCandidateExistingDocuments(data.candidate?.documents || [])
       const publicState = data.candidate?.publicApplyState || {}
-      if (publicState.form) {
-        applySavedPublicState(publicState)
-      } else {
-        const c = data.candidate || {}
-        setForm((prev) => ({
-          ...prev,
-          candidateName: c.fullName || prev.candidateName,
-          mobileNumber: c.mobileNumber || prev.mobileNumber,
-          whatsappNo: c.whatsappNo || prev.whatsappNo,
-          emailId: c.emailId || prev.emailId,
-          gender: c.gender || prev.gender,
-          currentAge: c.currentAge || prev.currentAge,
-          marriageStatus: c.marriageStatus || prev.marriageStatus,
-          aadhaarNo: c.aadhaarNo || prev.aadhaarNo,
-          panNo: c.panNo || prev.panNo,
-          dateOfBirth: c.dateOfBirth || prev.dateOfBirth,
-          currentAddress: c.currentAddress || prev.currentAddress,
-          permanentAddress: c.permanentAddress || prev.permanentAddress
-        }))
-      }
+      applySavedPublicState(publicState, data.candidate)
       clearStoredSubmission()
       clearStoredApplyDraft()
       setDone(null)
