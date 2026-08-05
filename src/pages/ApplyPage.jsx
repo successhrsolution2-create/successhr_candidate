@@ -942,25 +942,7 @@ export default function ApplyPage() {
   const [sameAsCurrentAddress, setSameAsCurrentAddress] = useState(false)
   const [documents, setDocuments] = useState({})
   const [documentIssues, setDocumentIssues] = useState({})
-  const [candidateSession, setCandidateSession] = useState(() => {
-    const stored = readStoredCandidateSession()
-    // If not found in ApplyPage's old format, try reading from Redux format
-    if (!stored) {
-      const globalSessionStr = typeof window !== 'undefined' ? window.localStorage.getItem('candidate_portal_user') : null
-      if (globalSessionStr) {
-        try {
-          const globalSession = JSON.parse(globalSessionStr)
-          if (globalSession) {
-            return {
-              candidateToken: globalSession.candidateToken,
-              candidate: { ...globalSession }
-            }
-          }
-        } catch (e) {}
-      }
-    }
-    return stored
-  })
+  const [candidateSession, setCandidateSession] = useState(() => readStoredCandidateSession())
   const [candidatePassword, setCandidatePassword] = useState('')
   const [candidatePasswordConfirm, setCandidatePasswordConfirm] = useState('')
   const [candidateLogin, setCandidateLogin] = useState({ candidateCode: '', password: '' })
@@ -993,17 +975,16 @@ export default function ApplyPage() {
   )
 
   const applySavedPublicState = (state = {}, candidateData = null) => {
-    if (state.form) {
-      setForm(mapAdminDataToCandidateForm(candidateData, { ...initialForm, ...state.form }))
-    } else if (candidateData) {
-      setForm((prev) => mapAdminDataToCandidateForm(candidateData, prev))
-    }
-    if (state.currentAddressParts) setCurrentAddressParts({ ...createEmptyAddressParts(), ...state.currentAddressParts })
-    if (state.permanentAddressParts) setPermanentAddressParts({ ...createEmptyAddressParts(), ...state.permanentAddressParts })
-    if (state.instituteAddressParts) setInstituteAddressParts({ ...createEmptyAddressParts(), ...state.instituteAddressParts })
-    if (state.collegeAddressParts) setCollegeAddressParts({ ...createEmptyAddressParts(), ...state.collegeAddressParts })
-    if (Array.isArray(state.referenceSuccessSources)) setReferenceSuccessSources(state.referenceSuccessSources)
-    if (typeof state.sameAsCurrentAddress === 'boolean') setSameAsCurrentAddress(state.sameAsCurrentAddress)
+    // Always start from a clean slate for authenticated candidates to avoid inheriting previous candidate's state
+    const baseForm = state.form ? { ...initialForm, ...state.form } : { ...initialForm }
+    setForm(mapAdminDataToCandidateForm(candidateData, baseForm))
+
+    setCurrentAddressParts(state.currentAddressParts ? { ...createEmptyAddressParts(), ...state.currentAddressParts } : createEmptyAddressParts())
+    setPermanentAddressParts(state.permanentAddressParts ? { ...createEmptyAddressParts(), ...state.permanentAddressParts } : createEmptyAddressParts())
+    setInstituteAddressParts(state.instituteAddressParts ? { ...createEmptyAddressParts(), ...state.instituteAddressParts } : createEmptyAddressParts())
+    setCollegeAddressParts(state.collegeAddressParts ? { ...createEmptyAddressParts(), ...state.collegeAddressParts } : createEmptyAddressParts())
+    setReferenceSuccessSources(Array.isArray(state.referenceSuccessSources) ? state.referenceSuccessSources : [])
+    setSameAsCurrentAddress(typeof state.sameAsCurrentAddress === 'boolean' ? state.sameAsCurrentAddress : false)
     setCurrentStep(Math.min(Math.max(Number(state.currentStep) || 0, 0), formSteps.length - 1))
     setDocuments({})
     setDocumentIssues({})
@@ -1552,6 +1533,17 @@ export default function ApplyPage() {
       setCandidateSession(nextSession)
       setCandidateEntryMode('update')
       setCandidateExistingDocuments(data.candidate?.documents || [])
+      
+      // Defensively reset form state before applying new candidate data
+      setForm(initialForm)
+      setCurrentStep(0)
+      setCurrentAddressParts(createEmptyAddressParts())
+      setPermanentAddressParts(createEmptyAddressParts())
+      setInstituteAddressParts(createEmptyAddressParts())
+      setCollegeAddressParts(createEmptyAddressParts())
+      setReferenceSuccessSources([])
+      setSameAsCurrentAddress(false)
+
       const publicState = data.candidate?.publicApplyState || {}
       applySavedPublicState(publicState, data.candidate)
       clearStoredSubmission()
@@ -1569,12 +1561,25 @@ export default function ApplyPage() {
 
   const logoutCandidate = () => {
     clearStoredCandidateSession()
+    clearStoredApplyDraft()
     setCandidateSession(null)
     setCandidateEntryMode('')
     setCandidateExistingDocuments([])
     setCandidateLogin({ candidateCode: '', password: '' })
     setDocuments({})
     setDocumentIssues({})
+    // Reset ALL form state so next candidate never sees previous candidate's data
+    setForm(initialForm)
+    setCurrentStep(0)
+    setCurrentAddressParts(createEmptyAddressParts())
+    setPermanentAddressParts(createEmptyAddressParts())
+    setInstituteAddressParts(createEmptyAddressParts())
+    setCollegeAddressParts(createEmptyAddressParts())
+    setReferenceSuccessSources([])
+    setSameAsCurrentAddress(false)
+    setCandidatePassword('')
+    setCandidatePasswordConfirm('')
+    setSubmitError('')
     toast.success('Candidate login cleared')
   }
 

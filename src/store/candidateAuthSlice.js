@@ -71,6 +71,7 @@ const candidateAuthSlice = createSlice({
       state.checking = false
       state.error = null
       localStorage.removeItem(CANDIDATE_SESSION_KEY)
+      localStorage.removeItem('success-public-apply:candidate-session')
     },
     // Called after successful sign-up to immediately mark session as authenticated
     setFromSignup(state, action) {
