@@ -984,16 +984,19 @@ export default function ApplyPage() {
     [documentIssues]
   )
 
-  const applySavedPublicState = (state = {}, candidateData = null) => {
-    // When candidateData (CMS data) is present (logged-in candidate),
-    // ALWAYS build the form entirely from the fresh CMS database fields.
-    // The publicApplyState.form is OLD candidate-submitted data and must NOT
-    // override what the admin has updated in the CMS.
-    // Only use publicApplyState for navigation state (currentStep, address parts, etc.)
-    const baseForm = candidateData
-      ? { ...initialForm }  // Start clean - CMS data is the source of truth
-      : (state.form ? { ...initialForm, ...state.form } : { ...initialForm }) // Non-logged-in: use draft
-    setForm(mapAdminDataToCandidateForm(candidateData, baseForm))
+  const applySavedPublicState = (state = {}, candidateData = null, isLocalDraft = false) => {
+    // If we are restoring from a newer local draft, it has the exact form state the user was working on.
+    if (isLocalDraft && state.form) {
+      setForm({ ...initialForm, ...state.form })
+    } else {
+      // When candidateData (CMS data) is present (logged-in candidate),
+      // ALWAYS build the form entirely from the fresh CMS database fields.
+      // Only use publicApplyState for navigation state (currentStep, address parts, etc.)
+      const baseForm = candidateData
+        ? { ...initialForm }  // Start clean - CMS data is the source of truth
+        : (state.form ? { ...initialForm, ...state.form } : { ...initialForm }) // Non-logged-in: use draft
+      setForm(mapAdminDataToCandidateForm(candidateData, baseForm))
+    }
 
     setCurrentAddressParts(state.currentAddressParts ? { ...createEmptyAddressParts(), ...state.currentAddressParts } : createEmptyAddressParts())
     setPermanentAddressParts(state.permanentAddressParts ? { ...createEmptyAddressParts(), ...state.permanentAddressParts } : createEmptyAddressParts())
@@ -1024,22 +1027,41 @@ export default function ApplyPage() {
     const token = storedSession?.candidateToken
 
     if (token) {
-      // Logged-in candidate: ALWAYS load from server, never from local IndexedDB draft
-      // Also clear any stale draft so other candidates don't see it
-      clearStoredApplyDraft()
-
-      api.get('/public/candidate/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(({ data }) => {
+      // Logged-in candidate: load from server, and check if there's a newer local IndexedDB draft.
+      Promise.all([
+        api.get('/public/candidate/me', { headers: { Authorization: `Bearer ${token}` } }),
+        readStoredApplyDraft()
+      ])
+        .then(([{ data }, localDraft]) => {
           if (!active) return
           const nextSession = { ...storedSession, candidate: data.candidate }
           saveStoredCandidateSession(nextSession)
           setCandidateSession(nextSession)
           setCandidateEntryMode('update')
           setCandidateExistingDocuments(data.candidate?.documents || [])
-          const publicState = data.candidate?.publicApplyState || {}
-          applySavedPublicState(publicState, data.candidate)
+
+          let isLocalDraftNewer = false
+          if (localDraft?.form) {
+            const draftTime = localDraft.savedAt ? new Date(localDraft.savedAt).getTime() : 0
+            const cmsTime = data.candidate?.updatedAt ? new Date(data.candidate.updatedAt).getTime() : 0
+            // If the local draft was saved AFTER the last CMS update, keep the unsubmitted draft changes
+            if (draftTime > cmsTime) {
+              isLocalDraftNewer = true
+            }
+          }
+
+          if (isLocalDraftNewer) {
+            applySavedPublicState(localDraft, data.candidate, true)
+            if (localDraft.documents) {
+              setDocuments(restoreDraftDocuments(localDraft.documents))
+            }
+          } else {
+            // Otherwise, discard stale draft and use CMS data
+            clearStoredApplyDraft()
+            const publicState = data.candidate?.publicApplyState || {}
+            applySavedPublicState(publicState, data.candidate, false)
+          }
+
           clearStoredSubmission()
           setDone(null)
           setDraftLoaded(true)
@@ -1091,9 +1113,9 @@ export default function ApplyPage() {
   }, [])
 
   useEffect(() => {
-    // Only auto-save to local draft when the candidate is NOT logged in.
-    // Logged-in candidates use the server as the source of truth.
-    if (!draftLoaded || done || candidateEntryMode === 'update') return undefined
+    // Auto-save to local draft for BOTH logged-in and new users, so a page refresh doesn't lose unsubmitted changes.
+    // For logged-in users, the mount effect will compare this draft's savedAt timestamp with the CMS updatedAt timestamp.
+    if (!draftLoaded || done) return undefined
 
     const timeoutId = window.setTimeout(() => {
       saveStoredApplyDraft({
@@ -2209,7 +2231,7 @@ export default function ApplyPage() {
           </section>
 
           <div className="sticky bottom-3 z-20 rounded-lg bg-white/95 p-2.5 shadow-lg shadow-slate-900/10 ring-1 ring-slate-200 backdrop-blur sm:static sm:shadow-sm">
-            <div className="grid gap-3 sm:flex sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={goBack}
