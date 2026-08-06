@@ -1642,6 +1642,10 @@ export default function ApplyPage() {
       return
     }
 
+    if (!window.confirm('Are you sure you want to submit this application?')) {
+      return
+    }
+
     setSubmitting(true)
     setSubmitError('')
     try {
@@ -1868,15 +1872,15 @@ export default function ApplyPage() {
         })
       })
 
-      const requestConfig = reduxCandidate?.candidateToken
-        ? { headers: { Authorization: `Bearer ${reduxCandidate.candidateToken}` } }
+      const requestConfig = candidateSession?.candidateToken
+        ? { headers: { Authorization: `Bearer ${candidateSession.candidateToken}` } }
         : undefined
-      const { data } = reduxCandidate?.candidateToken
+      const { data } = candidateSession?.candidateToken
         ? await api.put('/public/candidate/apply', payload, requestConfig)
         : await api.post('/public/apply', payload)
       if (data.candidateToken || data.candidate) {
         const nextSession = {
-          candidateToken: data.candidateToken || reduxCandidate?.candidateToken,
+          candidateToken: data.candidateToken || candidateSession?.candidateToken,
           candidate: data.candidate || {
             candidateCode: data.candidateCode || '',
             fullName: form.candidateName.trim(),
@@ -1891,7 +1895,7 @@ export default function ApplyPage() {
         name: form.candidateName.trim(),
         mode: data.mode || (advisorCode.trim() ? 'advisor' : 'walkin'),
         candidateCode: data.candidateCode || '',
-        updated: Boolean(reduxCandidate?.candidateToken),
+        updated: Boolean(candidateSession?.candidateToken),
         submittedAt: new Date().toISOString()
       }
       clearStoredApplyDraft()
@@ -1923,13 +1927,13 @@ export default function ApplyPage() {
           </p>
           {done.candidateCode ? <p className="mt-2 text-sm font-semibold text-sky-700">Your Candidate ID: {done.candidateCode}</p> : null}
           <p className="mt-2 text-xs font-semibold text-slate-500">Use this Candidate ID and your password to update the form later.</p>
-          {reduxCandidate?.candidateToken ? (
+          {candidateSession?.candidateToken ? (
             <button
               type="button"
               onClick={() => {
                 clearStoredSubmission()
                 setDone(null)
-                applySavedPublicState(reduxCandidate.candidate?.publicApplyState || currentPublicApplyState())
+                applySavedPublicState(candidateSession.candidate?.publicApplyState || currentPublicApplyState())
                 setCurrentStep(0)
               }}
               className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
