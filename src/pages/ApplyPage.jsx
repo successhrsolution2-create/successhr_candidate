@@ -1479,7 +1479,9 @@ export default function ApplyPage() {
     setCurrentStep(step)
   }
 
-  const goNext = () => {
+  const goNext = (event) => {
+    event?.preventDefault()
+    event?.stopPropagation()
     if (!validateCurrentStep()) return
     setCurrentStep((step) => Math.min(step + 1, formSteps.length - 1))
   }
@@ -2216,6 +2218,7 @@ export default function ApplyPage() {
 
               {isLastStep ? (
                 <button
+                  key="submit-application"
                   type="submit"
                   disabled={submitting}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70 sm:min-w-52"
@@ -2225,6 +2228,7 @@ export default function ApplyPage() {
                 </button>
               ) : (
                 <button
+                  key="next-step"
                   type="button"
                   onClick={goNext}
                   disabled={submitting}
