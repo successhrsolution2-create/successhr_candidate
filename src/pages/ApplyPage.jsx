@@ -1936,33 +1936,6 @@ export default function ApplyPage() {
               Update submitted application
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              clearStoredSubmission()
-              clearStoredApplyDraft()
-              clearStoredCandidateSession()
-              setCandidateSession(null)
-              setCandidateExistingDocuments([])
-              setDone(null)
-              setCurrentStep(0)
-              setForm(initialForm)
-              setCurrentAddressParts(createEmptyAddressParts())
-              setPermanentAddressParts(createEmptyAddressParts())
-              setInstituteAddressParts(createEmptyAddressParts())
-              setCollegeAddressParts(createEmptyAddressParts())
-              setReferenceSuccessSources([])
-              setSameAsCurrentAddress(false)
-              setDocuments({})
-              setDocumentIssues({})
-              setCandidatePassword('')
-              setCandidatePasswordConfirm('')
-              setSubmitError('')
-            }}
-            className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Submit another application
-          </button>
         </section>
       </PublicShell>
     )
