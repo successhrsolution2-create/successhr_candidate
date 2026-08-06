@@ -53,6 +53,7 @@ export default function App() {
             </CandidateProtectedRoute>
           }
         />
+        <Route path="/advisor" element={<Login />} />
         <Route
           path="/:code"
           element={
