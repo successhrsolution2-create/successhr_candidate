@@ -961,6 +961,7 @@ export default function ApplyPage() {
   const [candidateExistingDocuments, setCandidateExistingDocuments] = useState([])
   const [previewDoc, setPreviewDoc] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [done, setDone] = useState(() => readStoredSubmission())
   const [draftLoaded, setDraftLoaded] = useState(false)
@@ -1630,22 +1631,16 @@ export default function ApplyPage() {
     setCurrentStep(0)
   }
 
-  const submit = async (event) => {
-    event.preventDefault()
-
-    if (!submitRequestedRef.current) {
-      return
-    }
-    submitRequestedRef.current = false
-
+  const submit = () => {
     if (!validateBeforeSubmit()) {
       return
     }
 
-    if (!window.confirm('Are you sure you want to submit this application?')) {
-      return
-    }
+    setShowSubmitConfirm(true)
+  }
 
+  const executeSubmit = async () => {
+    setShowSubmitConfirm(false)
     setSubmitting(true)
     setSubmitError('')
     try {
@@ -2003,7 +1998,7 @@ export default function ApplyPage() {
           </button>
         </div>
 
-      <form onSubmit={submit} className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
         <WizardSidebar
           currentStep={currentStep}
           progress={progress}
@@ -2249,9 +2244,6 @@ export default function ApplyPage() {
               {isLastStep ? (
                 <button
                   type="submit"
-                  onClick={() => {
-                    submitRequestedRef.current = true
-                  }}
                   disabled={submitting}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70 sm:min-w-52"
                 >
@@ -2309,6 +2301,48 @@ export default function ApplyPage() {
                 {previewDoc.documentLabel || previewDoc.fileName}
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Custom Submit Confirmation Modal ── */}
+      {showSubmitConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setShowSubmitConfirm(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 text-lg font-bold text-slate-900">
+              <CheckCircle2 className="h-6 w-6 text-sky-600" />
+              Confirm Submission
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-600">
+              Are you sure you want to submit this application?
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSubmitConfirm(false)}
+                className="inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeSubmit}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70"
+                disabled={submitting}
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Submit
+              </button>
+            </div>
           </div>
         </div>
       )}
