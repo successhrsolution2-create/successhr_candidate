@@ -337,7 +337,7 @@ export default function CandidatesList() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => navigate(`/admin/cms/candidates/${candidate._id}`)}
+                        onClick={() => navigate(`/admin/cms/candidates/${candidate._id || candidate.id}`)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50"
                         aria-label="View candidate"
                       >
@@ -345,7 +345,7 @@ export default function CandidatesList() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigate(`/admin/cms/candidates/${candidate._id}/edit`)}
+                        onClick={() => navigate(`/admin/cms/candidates/${candidate._id || candidate.id}/edit`)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50"
                         aria-label="Edit candidate"
                       >

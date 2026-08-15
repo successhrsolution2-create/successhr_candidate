@@ -802,6 +802,11 @@ export default function CandidateForm() {
     if (!isEdit) return
 
     const load = async () => {
+      if (!id || id === 'undefined') {
+        navigate('/admin/cms/candidates', { replace: true })
+        return
+      }
+
       try {
         const { data } = await api.get(`/cms/candidates/${id}`)
         setForm(formFromCandidate(data.candidate))
