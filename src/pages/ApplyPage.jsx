@@ -1361,7 +1361,7 @@ export default function ApplyPage() {
         issue: {
           name: file.name || 'Selected file',
           size: file.size || 0,
-          message: `${file.name || 'Selected file'} is ${formatFileSize(file.size)}. Upload files must be 10MB or less.`
+          message: `${file.name || 'Selected file'} is ${formatFileSize(file.size)}. Upload files must be 50MB or less.`
         }
       }
     }
@@ -2123,7 +2123,7 @@ export default function ApplyPage() {
                         </div>
                       </div>
                       <p className="mt-2 text-xs font-semibold text-slate-600">
-                        Each file must be 10MB or less. Files that cannot be accepted are shown under their document name.
+                        Each file must be 50MB or less. Files that cannot be accepted are shown under their document name.
                       </p>
                     </div>
                     {candidateExistingDocuments.length ? (
@@ -3440,7 +3440,7 @@ function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRe
           <label htmlFor={inputId} className="block text-[13px] font-bold text-slate-900">
             {label || documentType.label}
           </label>
-          <p className="mt-1 text-xs font-semibold text-slate-500">{acceptedTypes} up to 10MB each</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{acceptedTypes} up to 50MB each</p>
           {files.length ? (
             <p className="mt-1 text-xs font-bold text-emerald-700">
               {files.length} file{files.length === 1 ? '' : 's'} ready to submit

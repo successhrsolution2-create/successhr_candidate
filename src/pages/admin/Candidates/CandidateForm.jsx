@@ -976,7 +976,7 @@ export default function CandidateForm() {
     }
 
     if (file.size <= 0 || file.size > MAX_DOCUMENT_IMAGE_SIZE) {
-      toast.error(`${file.name} must be 10MB or less`)
+      toast.error(`${file.name} must be 50MB or less`)
       return false
     }
 
@@ -1573,7 +1573,7 @@ function DocumentPanel({ documents, onAddFiles, onRemoveFile }) {
     <div className="space-y-5">
       <PanelHeader title="Candidate Documents" />
       <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">
-        JPG/PNG images and PDF letters where applicable. Max 10MB each.
+        JPG/PNG images, PDF letters, and videos where applicable. Max 50MB each.
       </p>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {resumeCandidateDocumentType ? <DocumentPanelUploadCard key={resumeCandidateDocumentType.key} documentType={resumeCandidateDocumentType} {...uploadCardProps} /> : null}

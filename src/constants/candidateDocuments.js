@@ -1,10 +1,12 @@
-export const MAX_DOCUMENT_IMAGE_SIZE = 10 * 1024 * 1024
+﻿export const MAX_DOCUMENT_IMAGE_SIZE = 50 * 1024 * 1024
 
 const imageTypes = ['image/jpeg', 'image/png']
 const letterTypes = ['image/jpeg', 'image/png', 'application/pdf']
+const videoTypes = ['video/mp4', 'video/quicktime', 'video/webm']
 
 const imageAccept = 'image/jpeg,image/png,.jpg,.jpeg,.png'
 const letterAccept = 'image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf'
+const videoAccept = 'video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm'
 
 export const candidateDocumentTypes = [
   {
@@ -183,6 +185,13 @@ export const candidateDocumentTypes = [
     accept: imageAccept,
     allowedTypes: imageTypes,
     typeMessage: 'must be a JPG or PNG image'
+  },
+  {
+    key: 'selectedVideo',
+    label: 'Selected Video / Feedback Video',
+    accept: videoAccept,
+    allowedTypes: videoTypes,
+    typeMessage: 'must be an MP4, MOV, or WebM video'
   }
 ]
 

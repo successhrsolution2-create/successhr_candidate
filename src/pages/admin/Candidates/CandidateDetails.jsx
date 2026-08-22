@@ -242,7 +242,7 @@ export default function CandidateDetails() {
     }
 
     if (file.size <= 0 || file.size > MAX_DOCUMENT_IMAGE_SIZE) {
-      toast.error('File must be 10MB or less')
+      toast.error('File must be 50MB or less')
       return
     }
 
@@ -320,7 +320,7 @@ export default function CandidateDetails() {
 
           <div>
             <h3 className="text-sm font-bold uppercase text-slate-500">Upload Missing Documents</h3>
-            <p className="mt-2 rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">JPG/PNG images and PDF letters where applicable, max 10MB each</p>
+            <p className="mt-2 rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">JPG/PNG images, PDF letters, and videos where applicable, max 50MB each</p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               {resumeCandidateDocumentType ? (
                 <AdminDocumentUpload

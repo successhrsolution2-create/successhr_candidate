@@ -410,47 +410,17 @@ export default function CandidateLogin() {
       </div>
 
       <main className="ca-card-wrap">
-        {/* ── Left hero panel ── */}
-        <aside className="ca-hero" aria-hidden="true">
-          <div className="ca-hero-inner">
-            <div className="ca-logo-wrap">
-              <img src="/success-logo.jpg" alt="Success HR Solutions" className="ca-logo" />
-            </div>
 
-            <div className="ca-hero-tagline">
-              <span className="ca-pill">
-                <Sparkles size={13} />
-                Candidate Portal
-              </span>
-              <h1 className="ca-hero-title">Your Career<br />Journey Starts<br />Here</h1>
-              <p className="ca-hero-sub">
-                {tab === 'login'
-                  ? 'Log in with your Candidate ID and password to access your application form.'
-                  : 'Create your account to start your job application with Success HR Solutions.'}
-              </p>
-            </div>
-
-            <div className="ca-feature-list">
-              {[
-                { icon: Shield, text: 'Secure & encrypted portal' },
-                { icon: UserRound, text: 'Personalised application form' },
-                { icon: KeyRound, text: 'Session-protected access' },
-              ].map(({ icon: Icon, text }) => (
-                <div className="ca-feature-item" key={text}>
-                  <span className="ca-feature-icon"><Icon size={15} /></span>
-                  <span>{text}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="ca-hero-mission">
-              Your Success is Our Mission
-            </div>
-          </div>
-        </aside>
-
-        {/* ── Right panel ── */}
         <section className="ca-form-panel">
+          {/* ── Form Logo (centered & compact) ── */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', marginTop: '8px' }}>
+            <img 
+              src="/success-logo.jpg" 
+              alt="Success HR Solutions" 
+              style={{ height: '44px', width: 'auto', objectFit: 'contain' }} 
+            />
+          </div>
+
           {/* ── Tab switcher ── */}
           <div className="ca-tabs" role="tablist" aria-label="Login or Register">
             <button
