@@ -15,6 +15,7 @@ import {
   KeyRound,
   Loader2,
   LogIn,
+  LogOut,
   Plus,
   Trash2,
   UploadCloud,
@@ -31,7 +32,7 @@ import {
   standaloneCandidateDocumentTypes
 } from '../constants/candidateDocuments'
 
-const hiddenApplyDocumentKeys = new Set(['candidatePhoto'])
+const hiddenApplyDocumentKeys = new Set(['candidatePhoto', 'selectedVideo'])
 const visibleApplyStandaloneDocumentTypes = standaloneCandidateDocumentTypes.filter(
   (documentType) => !hiddenApplyDocumentKeys.has(documentType.key)
 )
@@ -1355,13 +1356,15 @@ export default function ApplyPage() {
       }
     }
 
-    if (file.size <= 0 || file.size > MAX_DOCUMENT_IMAGE_SIZE) {
+    const maxSize = documentType.maxSize || MAX_DOCUMENT_IMAGE_SIZE
+    const maxSizeMB = Math.round(maxSize / (1024 * 1024))
+    if (file.size <= 0 || file.size > maxSize) {
       return {
         valid: false,
         issue: {
           name: file.name || 'Selected file',
           size: file.size || 0,
-          message: `${file.name || 'Selected file'} is ${formatFileSize(file.size)}. Upload files must be 50MB or less.`
+          message: `${file.name || 'Selected file'} is ${formatFileSize(file.size)}. Upload files must be ${maxSizeMB}MB or less.`
         }
       }
     }
@@ -1954,7 +1957,7 @@ export default function ApplyPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">
-                Welcome, {candidateSession?.candidate?.fullName || 'Candidate'}!
+                Welcome, {(candidateSession?.candidate?.fullName || 'Candidate').split(' ')[0]}
               </p>
               <p className="text-xs font-semibold text-slate-500">
                 ID: {candidateSession?.candidate?.candidateCode || 'Pending'}
@@ -1967,9 +1970,10 @@ export default function ApplyPage() {
               logoutCandidate()
               dispatch(logoutCandidateRedux())
             }}
-            className="inline-flex min-h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            className="group inline-flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 shadow-sm transition-all duration-200 hover:border-red-400 hover:bg-red-600 hover:text-white hover:shadow-md active:scale-95"
+            title="Log out"
           >
-            Log out
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
 
@@ -2094,37 +2098,33 @@ export default function ApplyPage() {
                       onPassword={setCandidatePassword}
                       onConfirmPassword={setCandidatePasswordConfirm}
                     />
-                  ) : (
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
-                        <KeyRound className="h-4 w-4" />
-                        Updating Candidate ID {candidateSession.candidate?.candidateCode}
-                      </div>
-                      <p className="mt-1 text-xs font-semibold text-emerald-700">Your saved login is active in this browser.</p>
-                    </div>
-                  )}
+                  ) : null}
 
                   <div>
-                    <div className="mb-3 rounded-lg border border-sky-100 bg-sky-50/60 px-3 py-3">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-800">
-                          <FileImage className="h-4 w-4 shrink-0 text-sky-700" />
-                          <span>Upload Documents</span>
+                    <div className="mb-6 rounded-2xl border border-slate-200/60 bg-white p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)]">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 text-sky-600 shadow-sm ring-1 ring-sky-100/50">
+                            <FileImage className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">Upload Documents</h3>
+                            <p className="mt-0.5 text-xs font-medium text-slate-500">Provide required certificates and files</p>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 text-xs font-bold">
-                          <span className="rounded-md bg-white px-2.5 py-1 text-sky-800 ring-1 ring-sky-200">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 transition-colors hover:bg-slate-200">
+                            <span className="flex h-2 w-2 rounded-full bg-sky-500"></span>
                             {selectedDocumentCount} selected
                           </span>
                           {selectedDocumentIssueCount ? (
-                            <span className="rounded-md bg-rose-50 px-2.5 py-1 text-rose-700 ring-1 ring-rose-200">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-rose-700 ring-1 ring-inset ring-rose-200/50">
+                              <span className="flex h-2 w-2 animate-pulse rounded-full bg-rose-500"></span>
                               {selectedDocumentIssueCount} issue{selectedDocumentIssueCount === 1 ? '' : 's'}
                             </span>
                           ) : null}
                         </div>
                       </div>
-                      <p className="mt-2 text-xs font-semibold text-slate-600">
-                        Each file must be 50MB or less. Files that cannot be accepted are shown under their document name.
-                      </p>
                     </div>
                     {candidateExistingDocuments.length ? (
                       <div className="mb-3 rounded-lg border border-slate-200 bg-white px-3 py-3">
@@ -2224,7 +2224,7 @@ export default function ApplyPage() {
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-70 sm:min-w-52"
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  {submitting ? 'Saving...' : 'Submit Application'}
+                  {submitting ? 'Saving...' : 'Submit'}
                 </button>
               ) : (
                 <button
@@ -2334,29 +2334,35 @@ function PublicShell({ children }) {
   return (
     <main className="min-h-screen bg-slate-50 px-3 py-4 text-slate-950 sm:px-5 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm sm:mb-4">
-          <div className="bg-gradient-to-r from-[#fffce3] via-[#f3faef] to-[#d9f4fb] px-3 py-3 sm:px-4">
-            <div className="flex items-center gap-3 sm:gap-4">
+        <header className="mb-4 overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-md shadow-slate-200/40 sm:mb-6">
+          <div className="h-1.5 w-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600"></div>
+          
+          <div className="p-3 sm:px-5 sm:py-4">
+            <div className="flex flex-row items-center gap-3 sm:gap-5">
               <div className="shrink-0">
-                <img src="/success-logo.jpg" alt="SUCCESS HR Solution" className="h-14 w-28 object-contain sm:h-16 sm:w-36 lg:w-40" />
+                <div className="rounded-xl border border-slate-100 bg-white p-1.5 shadow-sm ring-1 ring-slate-900/5 transition-transform hover:scale-[1.02]">
+                  <img src="/success-logo.jpg" alt="SUCCESS HR Solution" className="h-10 w-auto object-contain sm:h-14 lg:h-16" />
+                </div>
               </div>
               <div className="min-w-0 flex-1 text-left">
-                <h1 className="text-base font-black leading-tight text-sky-900 sm:text-2xl lg:text-3xl">SUCCESS HR SOLUTION&apos;S</h1>
-                <p className="mt-0.5 text-[13px] font-extrabold leading-tight text-slate-950 sm:text-base lg:text-lg">Your Success is Our Mission...!</p>
-                <p className="mt-0.5 break-words text-[11px] font-semibold text-slate-600 sm:text-xs">www.successhrsolutions.com</p>
+                <h1 className="bg-gradient-to-br from-sky-950 to-indigo-900 bg-clip-text text-[15px] font-black tracking-tight text-transparent sm:text-xl lg:text-2xl">SUCCESS HR SOLUTION&apos;S</h1>
+                <p className="mt-0.5 text-[11px] font-extrabold tracking-wide text-slate-600 sm:text-sm">Your Success is Our Mission...!</p>
+                <div className="mt-1 inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-inset ring-sky-600/20 sm:mt-1.5 sm:py-1 sm:text-xs">
+                  www.successhrsolutions.com
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-white px-3 py-2 text-[11px] leading-5 text-slate-900 sm:px-4 sm:text-xs">
-            <div className="grid gap-x-5 gap-y-1 font-semibold sm:grid-cols-3">
-              <p><span className="font-black">Email: -</span> info@successhrsolutions.com</p>
-              <p><span className="font-black">Mob: -</span> 8600463218</p>
-              <p><span className="font-black">GSTIN: -</span> 27BUEPA5163R1Z8</p>
+          <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-2.5 text-[10px] leading-relaxed text-slate-600 sm:px-5 sm:py-3 sm:text-xs">
+            <div className="grid gap-x-6 gap-y-1 font-medium sm:grid-cols-3">
+              <p><span className="font-bold text-slate-900">Email:</span> info@successhrsolutions.com</p>
+              <p><span className="font-bold text-slate-900">Mob:</span> 8600463218</p>
+              <p><span className="font-bold text-slate-900">GSTIN:</span> 27BUEPA5163R1Z8</p>
             </div>
-            <div className="mt-1 grid gap-x-5 gap-y-1 lg:grid-cols-2">
-              <p><span className="font-black">Sinner Office: -</span> Near Sai Xerox, below Yashraj Hotel, Near Waje Petrol Pump, Sinner- 422103 Nashik.</p>
-              <p><span className="font-black">Nashik Office: -</span> 311, 3rd Floor Atlanta Shopper&apos;s, Wasan Nagar, Pathardi Phata, Below Signus Hospital, Nashik.</p>
+            <div className="mt-2 grid gap-x-6 gap-y-1 border-t border-slate-200/60 pt-2 lg:grid-cols-2">
+              <p><span className="font-bold text-slate-900">Sinner Office:</span> Near Sai Xerox, below Yashraj Hotel, Near Waje Petrol Pump, Sinner- 422103 Nashik.</p>
+              <p><span className="font-bold text-slate-900">Nashik Office:</span> 311, 3rd Floor Atlanta Shopper&apos;s, Wasan Nagar, Pathardi Phata, Below Signus Hospital, Nashik.</p>
             </div>
           </div>
         </header>
@@ -3383,12 +3389,12 @@ function SelectField({ label, value, onChange, options }) {
 
 function EducationCertificateUploadGroup({ documents, documentIssues, addDocumentFiles, removeDocumentFile }) {
   return (
-    <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-3 md:col-span-2 xl:col-span-3">
-      <div className="mb-3">
-        <p className="text-sm font-bold text-slate-900">Education Certificates</p>
-        <p className="mt-1 text-xs font-semibold text-slate-500">Upload level-wise certificates like 10th, 12th, Graduate, and Post Graduate.</p>
+    <div className="rounded-2xl border border-sky-100 bg-sky-50/20 p-5 shadow-sm">
+      <div className="mb-5 border-b border-sky-100/50 pb-4">
+        <h3 className="text-base font-bold text-slate-900">Education Certificates</h3>
+        <p className="mt-1 text-sm font-medium text-slate-500">Upload level-wise certificates like 10th, 12th, Graduate, and Post Graduate.</p>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {educationCertificateDocumentTypes.map((documentType) => (
           <DocumentUpload
             key={documentType.key}
@@ -3407,12 +3413,12 @@ function EducationCertificateUploadGroup({ documents, documentIssues, addDocumen
 
 function ComputerCourseUploadGroup({ documents, documentIssues, addDocumentFiles, removeDocumentFile }) {
   return (
-    <div className="rounded-lg border border-cyan-200 bg-cyan-50/40 p-3 md:col-span-2 xl:col-span-3">
-      <div className="mb-3">
-        <p className="text-sm font-bold text-slate-900">Computer Courses Certificates</p>
-        <p className="mt-1 text-xs font-semibold text-slate-500">Upload course-wise certificates like MS-CIT, CCC, Advanced Excel, Tally, AutoCAD, Typing, and CATIA.</p>
+    <div className="rounded-2xl border border-cyan-100 bg-cyan-50/20 p-5 shadow-sm">
+      <div className="mb-5 border-b border-cyan-100/50 pb-4">
+        <h3 className="text-base font-bold text-slate-900">Computer Courses Certificates</h3>
+        <p className="mt-1 text-sm font-medium text-slate-500">Upload course-wise certificates like MS-CIT, CCC, Advanced Excel, Tally, AutoCAD, Typing, and CATIA.</p>
       </div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {computerCourseDocumentTypes.map((documentType) => (
           <DocumentUpload
             key={documentType.key}
@@ -3432,28 +3438,37 @@ function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRe
   const inputId = `document-${documentType.key}`
   const inputRef = useRef(null)
   const acceptedTypes = readableFileTypes(documentType)
+  const maxSizeText = `${Math.round((documentType.maxSize || MAX_DOCUMENT_IMAGE_SIZE) / (1024 * 1024))}MB`
 
   return (
-    <div className={`rounded-lg border bg-white p-3 ${issues.length ? 'border-rose-300 ring-1 ring-rose-100' : files.length ? 'border-emerald-200 ring-1 ring-emerald-100' : 'border-dashed border-slate-300'}`}>
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <label htmlFor={inputId} className="block text-[13px] font-bold text-slate-900">
+    <div className={`min-w-0 flex flex-col rounded-xl border p-3 transition-colors ${
+      issues.length ? 'border-rose-300 bg-rose-50/50' : files.length ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 bg-white hover:border-sky-300'
+    }`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <label htmlFor={inputId} className="block truncate text-[13px] font-bold text-slate-900">
             {label || documentType.label}
           </label>
-          <p className="mt-1 text-xs font-semibold text-slate-500">{acceptedTypes} up to 50MB each</p>
-          {files.length ? (
-            <p className="mt-1 text-xs font-bold text-emerald-700">
-              {files.length} file{files.length === 1 ? '' : 's'} ready to submit
-            </p>
-          ) : null}
+          <div className="mt-1 flex items-center gap-2">
+            {!files.length && !issues.length && (
+              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                Not uploaded
+              </span>
+            )}
+            <p className="truncate text-[11px] font-medium text-slate-500">Max {maxSizeText}</p>
+          </div>
         </div>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-bold text-sky-700 hover:bg-sky-100"
+          className={`inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition-colors ${
+            issues.length ? 'border-rose-200 bg-white text-rose-600 hover:bg-rose-100'
+            : files.length ? 'border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-100'
+            : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600'
+          }`}
+          title="Upload File"
         >
           <UploadCloud className="h-4 w-4" />
-          Upload
         </button>
       </div>
 
@@ -3475,18 +3490,23 @@ function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRe
       {files.length ? (
         <div className="mt-3 space-y-2">
           {files.map((file, index) => (
-            <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-2 rounded-md bg-emerald-50 px-2.5 py-2 ring-1 ring-emerald-100">
-              <div className="min-w-0">
-                <span className="block truncate text-xs font-bold text-slate-800">{file.name}</span>
-                <span className="block text-[11px] font-semibold text-emerald-700">{formatFileSize(file.size)} selected</span>
+            <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50/80 px-3 py-2 shadow-sm">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-200">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-slate-800">{file.name}</p>
+                  <p className="text-[11px] font-semibold text-emerald-700">{formatFileSize(file.size)}</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => onRemove(index)}
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-white hover:text-rose-600 hover:shadow-sm hover:ring-1 hover:ring-rose-200"
                 aria-label={`Remove ${documentType.label}`}
               >
-                <X className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           ))}
@@ -3494,14 +3514,14 @@ function DocumentUpload({ documentType, label, files, issues = [], onFiles, onRe
       ) : null}
 
       {issues.length ? (
-        <div className="mt-3 space-y-2">
+        <div className="space-y-2">
           {issues.map((issue, index) => (
-            <div key={`${issue.name}-${index}`} className="rounded-md bg-rose-50 px-2.5 py-2 text-xs font-semibold text-rose-800 ring-1 ring-rose-100">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div key={`${issue.name}-${index}`} className="rounded-lg border border-rose-200 bg-rose-50/80 p-3 shadow-sm">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
                 <div className="min-w-0">
-                  <p className="break-words">{issue.message}</p>
-                  {issue.size ? <p className="mt-1 text-[11px] text-rose-700">File size: {formatFileSize(issue.size)}</p> : null}
+                  <p className="text-xs font-bold text-rose-900 break-words">{issue.message}</p>
+                  {issue.size ? <p className="mt-1 text-[11px] font-semibold text-rose-700">Size: {formatFileSize(issue.size)}</p> : null}
                 </div>
               </div>
             </div>

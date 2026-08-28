@@ -1,4 +1,5 @@
-﻿export const MAX_DOCUMENT_IMAGE_SIZE = 50 * 1024 * 1024
+export const MAX_DOCUMENT_IMAGE_SIZE = 20 * 1024 * 1024  // 20MB for images/docs
+export const MAX_DOCUMENT_VIDEO_SIZE = 50 * 1024 * 1024  // 50MB for videos
 
 const imageTypes = ['image/jpeg', 'image/png']
 const letterTypes = ['image/jpeg', 'image/png', 'application/pdf']
@@ -191,7 +192,8 @@ export const candidateDocumentTypes = [
     label: 'Selected Video / Feedback Video',
     accept: videoAccept,
     allowedTypes: videoTypes,
-    typeMessage: 'must be an MP4, MOV, or WebM video'
+    typeMessage: 'must be an MP4, MOV, or WebM video',
+    maxSize: MAX_DOCUMENT_VIDEO_SIZE
   }
 ]
 
